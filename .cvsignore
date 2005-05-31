@@ -1,0 +1,6 @@
+.cvsignore
+.sconf_temp
+.sconsign
+cache
+config.log
+harsh

@@ -30,7 +30,8 @@ list_nth(list *l, int n)
 		l = l->next;
 		n--;
 	}
-	if (l) return (l->data);
+	if (l)
+		return (l->data);
 	return (NULL);
 }
 
@@ -39,7 +40,8 @@ list_append(list *l, void *data)
 {
 	list *s = l;
 
-	if (!s) return (list_new(data));
+	if (!s)
+		return (list_new(data));
 
 	while (s->next) s = s->next;
 	s->next = list_new(data);

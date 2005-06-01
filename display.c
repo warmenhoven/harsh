@@ -1,28 +1,207 @@
+#include <assert.h>
+#include <ctype.h>
 #include <curses.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <string.h>
 #include <unistd.h>
 #include "main.h"
 
 static int sp[2];
 
+static enum {
+	MENU,
+	FEED,
+} mode;
+
+static enum {
+	NONE,
+	ADD,
+} entry;
+
+static char *entry_text = NULL;
+static char *prompt = NULL;
+
+static void
+draw_menu()
+{
+}
+
+static void
+draw_feed()
+{
+}
+
+static void
+draw_prompt()
+{
+	if (entry == NONE) {
+		move(LINES - 1, 0);
+	} else {
+		int l = strlen(prompt);
+		int offset = l + 1 + strlen(entry_text) - (COLS - 1);
+		if (offset <= l) {
+			mvaddstr(LINES - 1, 0, offset >= 0 ? &prompt[offset] : prompt);
+			addch(' ');
+			addstr(entry_text);
+		} else {
+			offset -= l + 1;
+			mvaddstr(LINES - 1, 0, &entry_text[offset]);
+		}
+	}
+	clrtoeol();
+}
+
 static void
 redraw_screen()
 {
-    refresh();
+	switch (mode) {
+	case MENU:
+		draw_menu();
+		break;
+	case FEED:
+		draw_feed();
+		break;
+	}
+	draw_prompt();
+}
+
+static void
+set_prompt(const char *p)
+{
+	if (prompt)
+		free(prompt);
+	prompt = strdup(p);
+}
+
+static void
+set_entry(int type)
+{
+	entry = type;
+	if (type == NONE) {
+		curs_set(0);
+	} else {
+		curs_set(1);
+		move(LINES - 1, strlen(prompt) + 1);
+		clrtoeol();
+	}
+}
+
+static void
+ui_add_feed()
+{
+	set_prompt("Add feed url:");
+	set_entry(ADD);
+	draw_prompt();
+}
+
+static void
+process_entry()
+{
+	switch (entry) {
+	case NONE:
+		assert(0);
+		break;
+	case ADD:
+		feed_add(entry_text);
+		break;
+	}
+}
+
+static int
+entry_add(int c)
+{
+	int l = strlen(entry_text);
+
+	switch (c) {
+	case 7:			/* ^G */
+		set_entry(NONE);
+		draw_prompt();
+		*entry_text = 0;
+		break;
+	case 8:			/* ^H */
+	case 127:		/* backspace */
+	case 263:		/* backspace */
+		if (*entry_text) {
+			entry_text[l - 1] = 0;
+			draw_prompt();
+		}
+		break;
+	case 12:		/* ^L */
+		clear();
+		redraw_screen();
+		break;
+	case 13:		/* ^M, enter */
+		process_entry();
+		set_entry(NONE);
+		draw_prompt();
+		*entry_text = 0;
+		break;
+	case 21:		/* ^U */
+		*entry_text = 0;
+		draw_prompt();
+		break;
+	case 23:		/* ^W */
+		c = l - 1;
+		while (c > 0 && isspace(entry_text[c])) c--;
+		while (c + 1 && !isspace(entry_text[c])) c--;
+		c++;
+		entry_text[c] = 0;
+		draw_prompt();
+		break;
+	default:
+		if (isprint(c)) {
+			entry_text = realloc(entry_text, l + 2);
+			entry_text[l] = c;
+			entry_text[l + 1] = 0;
+			draw_prompt();
+		} else {
+			return (0);
+		}
+	}
+	refresh();
+	return (0);
+}
+
+static int
+menu_input(int c)
+{
+	if (entry != NONE) {
+		return (entry_add(c));
+	}
+
+	switch (c) {
+	case 'a':
+		ui_add_feed();
+		break;
+	case 'q':
+		end_window();
+		exit(0);
+	default:
+		return (0);
+	}
+	refresh();
+	return (0);
+}
+
+static int
+feed_input(int c)
+{
+	switch (c) {
+	}
+	return (0);
 }
 
 static int
 stdin_ready(void *nbv, int event, nbio_fd_t *fdt)
 {
 	int c = getch();
-    switch (c) {
-    case 'q':
-        end_window();
-        exit(0);
-        break;
-    }
-	refresh();
+	switch (mode) {
+	case MENU:
+		return (menu_input(c));
+	case FEED:
+		return (feed_input(c));
+	}
 	return (0);
 }
 
@@ -35,6 +214,7 @@ sigwinch_redraw(void *nbv, int event, nbio_fd_t *fdt)
 	initscr();
 	clear();
 	redraw_screen();
+	refresh();
 	return (0);
 }
 
@@ -47,6 +227,7 @@ sigwinch(int sig)
 	initscr();
 	clear();
 	redraw_screen();
+	refresh();
 }
 
 static int
@@ -55,7 +236,7 @@ watch_fd(int fd, nbio_handler_t handler)
 	nbio_fd_t *fdt;
 
 	if (!(fdt = nbio_addfd(&gnb, NBIO_FDTYPE_STREAM, fd,
-                           0, handler, NULL, 0, 0))) {
+						   0, handler, NULL, 0, 0))) {
 		fprintf(stderr, "Couldn't read stdin\n");
 		return (1);
 	}
@@ -78,7 +259,11 @@ init_window()
 	raw();
 	noecho();
 
+	set_entry(NONE);
+	entry_text = calloc(1, 1);
+
 	redraw_screen();
+	refresh();
 
 	if (socketpair(AF_UNIX, SOCK_STREAM, 0, sp))
 		return (1);
@@ -103,4 +288,4 @@ end_window()
 	endwin();
 }
 
-/* vim:set sw=4 ts=4 et ai cin tw=80: */
+/* vim:set sw=4 ts=4 noet ai cin tw=80: */

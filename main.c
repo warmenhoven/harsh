@@ -8,7 +8,7 @@ nbio_t gnb;
 int
 main()
 {
-    if (read_config())
+	if (read_config())
 		return (1);
 
 	if (nbio_init(&gnb, 15)) {
@@ -16,11 +16,11 @@ main()
 		return (1);
 	}
 
-    if (init_window())
+	if (init_window())
 		return (1);
 
-    if (init_feeds())
-        return (1);
+	if (init_feeds())
+		return (1);
 
 	while (1) {
 		if (nbio_poll(&gnb, -1) == -1)
@@ -32,4 +32,4 @@ main()
 	return (0);
 }
 
-/* vim:set sw=4 ts=4 et ai cin tw=80: */
+/* vim:set sw=4 ts=4 noet ai cin tw=80: */

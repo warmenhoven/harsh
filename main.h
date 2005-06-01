@@ -10,9 +10,9 @@
 #define PROG "harsh"
 
 struct feed {
-    char *url;
-    char *data;
-    uint32_t refresh;
+	char *url;
+	char *data;
+	uint32_t refresh;
 };
 
 extern list *feeds;
@@ -24,7 +24,8 @@ extern int init_window(void);
 extern void end_window(void);
 
 extern int init_feeds(void);
+extern void feed_add(const char *);
 
 #endif
 
-/* vim:set sw=4 ts=4 et ai cin tw=80: */
+/* vim:set sw=4 ts=4 noet ai cin tw=80: */

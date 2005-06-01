@@ -12,4 +12,4 @@ save_config()
 	return (0);
 }
 
-/* vim:set sw=4 ts=4 et ai cin tw=80: */
+/* vim:set sw=4 ts=4 noet ai cin tw=80: */

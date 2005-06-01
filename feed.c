@@ -8,4 +8,9 @@ init_feeds()
 	return (0);
 }
 
-/* vim:set sw=4 ts=4 et ai cin tw=80: */
+void
+feed_add(const char *url)
+{
+}
+
+/* vim:set sw=4 ts=4 noet ai cin tw=80: */

@@ -3,6 +3,7 @@
 #include <curses.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include "main.h"
@@ -17,14 +18,25 @@ static enum {
 static enum {
 	NONE,
 	ADD,
+	TO,
 } entry;
 
 static char *entry_text = NULL;
 static char *prompt = NULL;
 
+static char *add_url;
+
 static void
 draw_menu()
 {
+	list *l = feeds;
+	int line = 0;
+
+	while (l) {
+		struct feed *feed = l->data;
+		l = l->next;
+		mvaddstr(line++, 4, feed->url);
+	}
 }
 
 static void
@@ -98,12 +110,27 @@ ui_add_feed()
 static void
 process_entry()
 {
+	struct feed *feed;
+	static int refresh;
+
 	switch (entry) {
 	case NONE:
 		assert(0);
 		break;
 	case ADD:
-		feed_add(entry_text);
+		if (add_url)
+			free(add_url);
+		add_url = strdup(entry_text);
+		*entry_text = 0;
+		set_prompt("Interval in hours to check feed:");
+		set_entry(TO);
+		break;
+	case TO:
+		refresh = strtoul(entry_text, NULL, 10);
+		feed = feed_add(add_url, refresh);
+		save_config();
+		feed_fetch(feed);
+		set_entry(NONE);
 		break;
 	}
 }
@@ -133,8 +160,7 @@ entry_add(int c)
 		break;
 	case 13:		/* ^M, enter */
 		process_entry();
-		set_entry(NONE);
-		draw_prompt();
+		redraw_screen();
 		*entry_text = 0;
 		break;
 	case 21:		/* ^U */
@@ -262,6 +288,8 @@ init_window()
 	set_entry(NONE);
 	entry_text = calloc(1, 1);
 
+	add_url = NULL;
+
 	redraw_screen();
 	refresh();
 
@@ -287,5 +315,3 @@ end_window()
 {
 	endwin();
 }
-
-/* vim:set sw=4 ts=4 noet ai cin tw=80: */

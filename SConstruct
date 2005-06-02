@@ -17,7 +17,7 @@ if not conf.CheckLibWithHeader('ncurses', 'curses.h', 'c',
 	print 'ncurses not found'
 	Exit(1)
 
-slist = ['config.c', 'display.c', 'feed.c', 'list.c', 'main.c', 'xml.c']
+slist = ['config.c', 'cookie.c', 'display.c', 'feed.c', 'list.c', 'main.c', 'xml.c']
 
 if not conf.CheckLibWithHeader('expat', 'expat.h', 'c',
 				       'XML_ParserCreate(0);'):

@@ -8,6 +8,9 @@ nbio_t gnb;
 int
 main()
 {
+	if (read_cookies())
+		return (1);
+
 	if (read_config())
 		return (1);
 
@@ -31,5 +34,3 @@ main()
 
 	return (0);
 }
-
-/* vim:set sw=4 ts=4 noet ai cin tw=80: */

@@ -57,6 +57,20 @@ find_cookies(struct feed *feed)
 		feed->cookies[strlen(feed->cookies) - 2] = 0;
 }
 
+void
+free_cookies()
+{
+	while (cookies) {
+		struct cookie *cookie = cookies->data;
+		cookies = list_remove(cookies, cookie);
+		free(cookie->host);
+		free(cookie->path);
+		free(cookie->name);
+		free(cookie->value);
+		free(cookie);
+	}
+}
+
 int
 read_cookies()
 {

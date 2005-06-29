@@ -267,8 +267,11 @@ parse_url(struct feed *feed)
 	char *url = feed->url;
 	char *path, *tmp;
 
-	if (strncasecmp(url, "http://", 7) == 0 ||
-		strncasecmp(url, "feed://", 7) == 0) {
+	if (strncasecmp(url, "feed:", 5) == 0) {
+		url += 5;
+	}
+
+	if (strncasecmp(url, "http://", 7) == 0) {
 		url += 7;
 	} else if (strncasecmp(url, "rss://", 6) == 0) {
 		url += 6;

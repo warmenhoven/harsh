@@ -4,3 +4,6 @@
 cache
 config.log
 harsh
+cscope.in.out
+cscope.out
+cscope.po.out

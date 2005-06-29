@@ -1,0 +1,25 @@
+Avoid the following bug:
+	1. cookie expires
+	2. new story posted
+	3. get feed without cookies, lose protected stories
+	4. modified-since changes
+	5. refresh cookie
+	6. get feed with cookies.
+
+Since the modified-since didn't change even though the cookies did, you have to
+wait until a new story is posted to get back all the protected stories. I think
+the only fix for this is to make modified-since dependent on the cookies of the
+site. If the cookies change, the modified-since needs to be invalidated.
+
+-----
+
+There should be two UI modes: "RSS" mode, and "LJ" mode, for lack of better
+names. RSS mode should list each feed individually, which ones have unread
+stories, et cetera. LJ mode should have all of the stories from all of the feeds
+flat and in time order.
+
+-----
+
+It needs to reload feeds on its own, at per-feed configurable intervals.
+
+-----

@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "list.h"
 
 void *xml_new(const char *);
@@ -13,3 +14,7 @@ char *xml_get_attrib(void *, const char *);
 char *xml_get_data(void *);
 
 void xml_free(void *);
+
+void *xml_parse(const char *, int len);
+
+void xml_print(FILE *, void *, char *);

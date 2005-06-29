@@ -2,6 +2,8 @@
 #define _GNU_SOURCE
 #endif
 
+#include <expat.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "list.h"
@@ -65,10 +67,23 @@ void
 xml_data(void *n, const char *data, int len)
 {
 	xmlnode *node = n;
+	int totlen = len;
+
 	if (!node)
 		return;
+	if (!len)
+		return;
 
-	node->data = strndup(data, len);
+	if (node->data)
+		totlen += strlen(node->data);
+
+	node->data = realloc(node->data, totlen + 1);
+	if (totlen == len) {
+		strncpy(node->data, data, len);
+	} else {
+		strncat(node->data, data, len);
+	}
+	node->data[totlen] = 0;
 }
 
 void *
@@ -170,4 +185,95 @@ xml_free(void *n)
 		free(node->data);
 
 	free(node);
+}
+
+static void
+xml_start(void *data, const char *el, const char **attr)
+{
+	void **node = (void **)data;
+	int i;
+
+	if (*node)
+		*node = xml_child(*node, el);
+	else
+		*node = xml_new(el);
+
+	for (i = 0; attr[i]; i += 2)
+		xml_attrib(*node, attr[i], attr[i + 1]);
+}
+
+static void
+xml_end(void *data, const char *el)
+{
+	void **node = (void **)data;
+
+	if (!*node)
+		return;
+
+	if (!xml_parent(*node))
+		return;
+	if (!strcmp(xml_name(*node), el))
+		*node = xml_parent(*node);
+}
+
+static void
+xml_chardata(void *data, const char *s, int len)
+{
+	void **node = (void **)data;
+
+	xml_data(*node, s, len);
+}
+
+void *
+xml_parse(const char *data, int len)
+{
+	XML_Parser parser;
+	void *ret = NULL;
+
+	parser = XML_ParserCreate(NULL);
+	if (!parser)
+		return (NULL);
+
+	XML_SetUserData(parser, &ret);
+	XML_SetElementHandler(parser, xml_start, xml_end);
+	XML_SetCharacterDataHandler(parser, xml_chardata);
+
+	XML_Parse(parser, data, len, 0);
+
+	return (ret);
+}
+
+void
+xml_print(FILE *f, void *n, char *prefix)
+{
+	xmlnode *node = n;
+	char *newprefix;
+	list *l;
+
+	fprintf(f, "%s<%s", prefix, xml_name(node));
+
+	l = node->attribs;
+	while (l) {
+		xmlnode *attrib = l->data;
+		l = l->next;
+		fprintf(f, " %s=\"%s\"", attrib->name, attrib->data);
+	}
+
+	fprintf(f, ">\n");
+
+	newprefix = malloc(strlen(prefix) + 3);
+	sprintf(newprefix, "%s  ", prefix);
+
+	l = node->children;
+	while (l) {
+		xml_print(f, l->data, newprefix);
+		l = l->next;
+	}
+
+	free(newprefix);
+
+	if (node->data)
+		fprintf(f, "%s  %s\n", prefix, node->data);
+
+	fprintf(f, "%s</%s>\n", prefix, node->name);
 }

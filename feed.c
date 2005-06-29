@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "main.h"
+#include "xml.h"
 
 list *feeds = NULL;
 
@@ -14,6 +15,8 @@ feed_parse(struct feed *feed)
 	char *hdrend, *databegin;
 
 	char *lastmod;
+
+	void *xml_tree;
 
 	hdrend = strstr(feed->data, "\r\n\r\n");
 	assert(hdrend);
@@ -27,10 +30,25 @@ feed_parse(struct feed *feed)
 		char *end = strchr(lastmod + 2, '\r');
 		if (end) {
 			*end = 0;
+			if (feed->modified)
+				free(feed->modified);
 			feed->modified = strdup(lastmod + strlen("\r\nLast-Modified: "));
 			*end = '\r';
 		}
 	}
+
+	/*
+	 * we might get Set-Cookie: here but we ignore it. i don't consider that a
+	 * bug. if you want fresh cookies then you should bake them yourself.
+	 */
+
+	xml_tree = xml_parse(databegin, strlen(databegin));
+	if (xml_tree == NULL) {
+		feed->status = FEED_ERR_XML;
+		return;
+	}
+
+	xml_free(xml_tree);
 }
 
 static void
@@ -45,12 +63,12 @@ feed_check(struct feed *feed, int startup)
 
 	hdrend = strstr(feed->tmpdata, "\r\n\r\n");
 	if (!hdrend) {
-		feed->status = FEED_ERR_RSS;
+		feed->status = FEED_ERR_HDR;
 		return;
 	}
 
 	if (strncasecmp(feed->tmpdata, "HTTP/", 5) != 0) {
-		feed->status = FEED_ERR_RSS;
+		feed->status = FEED_ERR_HDR;
 		return;
 	}
 
@@ -58,7 +76,7 @@ feed_check(struct feed *feed, int startup)
 
 	if (code >= 500) {
 	} else if (code >= 400) {
-		feed->status = FEED_ERR_RSS;
+		feed->status = FEED_ERR_HDR;
 		return;
 	} else if (code >= 300) {
 		if (code == 304) {
@@ -77,7 +95,7 @@ feed_check(struct feed *feed, int startup)
 			save_feed(feed);
 		feed_parse(feed);
 	} else {
-		feed->status = FEED_ERR_RSS;
+		feed->status = FEED_ERR_HDR;
 		return;
 	}
 }
@@ -147,6 +165,7 @@ send_request(struct feed *feed)
 
 	len = strlen("GET ") + strlen(feed->path) + strlen(" HTTP/1.0\r\n");
 	len += strlen("Host: ") + strlen(feed->host) + strlen("\r\n");
+	len += strlen("User-Agent: ") + strlen(USER_AGENT) + strlen("\r\n");
 	if (feed->cookies) {
 		len += strlen("Cookie: ") + strlen(feed->cookies) + strlen("\r\n");
 	}
@@ -162,7 +181,8 @@ send_request(struct feed *feed)
 	len += strlen("\r\n") + 1;
 	req = malloc(len);
 
-	sprintf(req, "GET %s HTTP/1.0\r\nHost: %s\r\n", feed->path, feed->host);
+	sprintf(req, "GET %s HTTP/1.0\r\nHost: %s\r\nUser-Agent: %s\r\n",
+			feed->path, feed->host, USER_AGENT);
 	if (feed->cookies) {
 		strcat(req, "Cookie: ");
 		strcat(req, feed->cookies);

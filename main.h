@@ -7,16 +7,22 @@
 #include "list.h"
 
 #define PROG "harsh"
+#define VERS "0.01"
+#define URL  "http://www.warmenhoven.org/src/"
+#define EMAIL "eric@warmenhoven.org"
+
+#define USER_AGENT PROG "/" VERS " (" URL "; " EMAIL ")"
 
 enum feed_status {
 	FEED_ERR_NONE,
-	FEED_ERR_URL,
-	FEED_ERR_DNS,
-	FEED_ERR_NET,
-	FEED_ERR_LIB,
-	FEED_ERR_SND,
-	FEED_ERR_RCV,
-	FEED_ERR_RSS,
+	FEED_ERR_URL,	/* problem parsing URL */
+	FEED_ERR_DNS,	/* problem resolving host */
+	FEED_ERR_NET,	/* problem connecting to server */
+	FEED_ERR_LIB,	/* problem inside nbio */
+	FEED_ERR_SND,	/* problem writing request */
+	FEED_ERR_RCV,	/* problem receiving response */
+	FEED_ERR_HDR,	/* problem with HTTP headers */
+	FEED_ERR_XML,	/* problem with XML data */
 };
 
 struct feed {

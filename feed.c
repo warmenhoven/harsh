@@ -337,7 +337,12 @@ feed_fetch(struct feed *feed)
 	if (parse_url(feed))
 		return;
 	if (find_cookies(feed)) {
-		/* if the cookies have changed, invalidate modified-since */
+		/*
+		 * if the cookies have changed, invalidate modified-since. on startup it
+		 * will always (possibly incorrectly) think that the cookies have
+		 * changed. so that means that on startup it always pulls all of the
+		 * feeds. i don't consider that a bug; that's the correct behavior.
+		 */
 		if (feed->modified)
 			free(feed->modified);
 		feed->modified = NULL;

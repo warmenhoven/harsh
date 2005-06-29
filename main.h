@@ -50,7 +50,7 @@ extern int save_config(void);
 extern int save_feed(struct feed *);
 
 extern int read_cookies(void);
-extern void find_cookies(struct feed *);
+extern int find_cookies(struct feed *);
 
 extern int init_window(void);
 extern void end_window(void);

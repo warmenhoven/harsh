@@ -64,6 +64,7 @@ feed_check(struct feed *feed, int startup)
 		if (code == 304) {
 			feed->status = FEED_ERR_NONE;
 		} else {
+			/* XXX */
 		}
 	} else if (code >= 200) {
 		if (feed->data)
@@ -335,7 +336,12 @@ feed_fetch(struct feed *feed)
 
 	if (parse_url(feed))
 		return;
-	find_cookies(feed);
+	if (find_cookies(feed)) {
+		/* if the cookies have changed, invalidate modified-since */
+		if (feed->modified)
+			free(feed->modified);
+		feed->modified = NULL;
+	}
 
 	if (!(hp = gethostbyname(feed->host))) {
 		feed->status = FEED_ERR_DNS;

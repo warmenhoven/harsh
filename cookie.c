@@ -14,13 +14,13 @@ struct cookie {
 
 static list *cookies = NULL;
 
-void
+int
 find_cookies(struct feed *feed)
 {
 	list *l = cookies;
+	char *orig = feed->cookies;
+	int ret = 0;
 
-	if (feed->cookies)
-		free(feed->cookies);
 	feed->cookies = calloc(1, 1);
 
 	while (l) {
@@ -55,6 +55,19 @@ find_cookies(struct feed *feed)
 
 	if (feed->cookies[0])
 		feed->cookies[strlen(feed->cookies) - 2] = 0;
+
+	if (orig) {
+		if (strcmp(orig, feed->cookies) != 0)
+			ret = 1;
+	} else {
+		if (feed->cookies[0] != 0)
+			ret = 1;
+	}
+
+	if (orig)
+		free(orig);
+
+	return (ret);
 }
 
 void

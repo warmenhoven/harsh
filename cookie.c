@@ -70,7 +70,7 @@ find_cookies(struct feed *feed)
 	return (ret);
 }
 
-void
+static void
 free_cookies()
 {
 	while (cookies) {
@@ -97,6 +97,8 @@ read_cookies()
 		unlink(path);
 		return (0);
 	}
+
+	free_cookies();
 
 	while (fgets(line, 8192, f)) {
 		char *host, *flag, *path, *secure, *expiration, *name, *value;

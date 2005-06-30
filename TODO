@@ -2,3 +2,11 @@ There should be two UI modes: "RSS" mode, and "LJ" mode, for lack of better
 names. RSS mode should list each feed individually, which ones have unread
 stories, et cetera. LJ mode should have all of the stories from all of the feeds
 flat and in time order.
+
+-----
+
+We don't have a file that saves a cache of the feed, but we need a file that
+saves which stories have been read. It won't be used for LJ mode. We need a way
+to reconcile which stories have been read when using LJ mode. Or maybe not;
+maybe we'll just say that if you're in LJ mode all the stories have been read.
+If you're in LJ mode then it's really up to you to keep track, now isn't it.

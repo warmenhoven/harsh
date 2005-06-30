@@ -48,6 +48,16 @@ struct feed {
 
 	uint32_t interval;
 	time_t next_poll;
+
+	list *items;
+};
+
+struct item {
+	char *guid;
+	time_t date;
+	char *title;
+	char *link;
+	char *desc;
 };
 
 extern list *feeds;

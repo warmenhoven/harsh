@@ -1,14 +1,15 @@
 # vim:set filetype=python:
 
-prog = Environment(CCFLAGS	= '-g3 -O3 -Wall ',
+prog = Environment(CCFLAGS	= '-g3 -O3 -Wall -Werror',
 		   CPPPATH	= ['/usr/include/libnbio'])
 
 prog.CacheDir('cache')
 
 conf = Configure(prog)
 
-if not conf.CheckLibWithHeader('nbio', 'libnbio.h', 'c',
-			       'nbio_init(0, 0);'):
+if not conf.CheckLibWithHeader('nbio',
+							   ['sys/socket.h', 'libnbio.h'],
+							   'c', 'nbio_init(NULL, 0);'):
 	print 'nbio not found'
 	Exit(1)
 

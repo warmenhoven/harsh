@@ -76,14 +76,20 @@ feed_check(struct feed *feed)
 	code = strtoul(feed->tmpdata + 9, NULL, 10);
 
 	if (code >= 500) {
+		feed->status = FEED_ERR_HDR;
+		return;
 	} else if (code >= 400) {
 		feed->status = FEED_ERR_HDR;
 		return;
 	} else if (code >= 300) {
 		if (code == 304) {
-			feed->status = FEED_ERR_NONE;
+			/*
+			 * the contents have not been modified. we don't need to update
+			 * feed->status because at the start of feed_fetch() we set the
+			 * status to FEED_ERR_NONE.
+			 */
 		} else {
-			/* XXX */
+			/* XXX need to handle redirects, etc. */
 		}
 	} else if (code >= 200) {
 		if (feed->data)
@@ -104,6 +110,7 @@ feed_close(struct feed *feed)
 {
 	nbio_closefdt(&gnb, feed->fdt);
 	feed->fdt = NULL;
+	update_feed_display(feed);
 }
 
 static int
@@ -122,10 +129,10 @@ feed_callback(void *nb, int event, nbio_fd_t *fdt)
 		}
 
 		if (len == 0) {
-			feed_close(feed);
 			feed->tmpdata = realloc(feed->tmpdata, feed->tmpdatalen + 1);
 			feed->tmpdata[feed->tmpdatalen] = 0;
 			feed_check(feed);
+			feed_close(feed);
 			return (0);
 		}
 
@@ -219,6 +226,15 @@ feed_connected(void *nb, int event, nbio_fd_t *fdt)
 {
 	struct feed *feed = fdt->priv;
 
+	if (feed->fdt) {
+		/*
+		 * we're already connected, we must have tried to connect twice, ignore
+		 * this one, because another one is already successful
+		 */
+		nbio_closefdt(nb, fdt);
+		return (0);
+	}
+
 	if (event == NBIO_EVENT_CONNECTED) {
 		if (!(fdt = nbio_addfd(nb, NBIO_FDTYPE_STREAM, fdt->fd,
 							   0, feed_callback, feed, 0, 128))) {
@@ -227,6 +243,7 @@ feed_connected(void *nb, int event, nbio_fd_t *fdt)
 		}
 
 		feed->fdt = fdt;
+		update_feed_display(feed);
 		nbio_setraw(nb, fdt, 2);
 
 		send_request(feed);
@@ -352,6 +369,17 @@ feed_fetch(struct feed *feed)
 {
 	struct sockaddr_in sa;
 	struct hostent *hp;
+
+	if (feed->fdt) {
+		/*
+		 * we're already connected and we're trying to connect again. what do
+		 * you think, should we kill the current connection and start a new one?
+		 * i don't think so. it's easier to just ignore this request.
+		 */
+		return;
+	}
+
+	feed->status = FEED_ERR_NONE;
 
 	if (parse_url(feed))
 		return;

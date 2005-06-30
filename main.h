@@ -23,6 +23,7 @@ enum feed_status {
 	FEED_ERR_RCV,	/* problem receiving response */
 	FEED_ERR_HDR,	/* problem with HTTP headers */
 	FEED_ERR_XML,	/* problem with XML data */
+	FEED_ERR_RSS,	/* problem with the RSS data */
 };
 
 struct feed {
@@ -58,6 +59,7 @@ extern int read_cookies(void);
 extern int find_cookies(struct feed *);
 
 extern int init_window(void);
+extern void update_feed_display(struct feed *);
 extern void end_window(void);
 
 extern int init_feeds(void);

@@ -35,7 +35,14 @@ draw_menu()
 	while (l) {
 		struct feed *feed = l->data;
 		l = l->next;
-		mvaddstr(line++, 4, feed->url);
+		move(line, 0);
+		clrtoeol();
+		mvaddstr(line, 4, feed->url);
+		if (feed->fdt)
+			mvaddch(line, 1, '.');
+		if (feed->status != FEED_ERR_NONE)
+			mvaddch(line, 2, '!');
+		line++;
 	}
 }
 
@@ -76,6 +83,13 @@ redraw_screen()
 		break;
 	}
 	draw_prompt();
+}
+
+void
+update_feed_display(struct feed *feed)
+{
+	redraw_screen();
+	refresh();
 }
 
 static void

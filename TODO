@@ -10,3 +10,14 @@ saves which stories have been read. It won't be used for LJ mode. We need a way
 to reconcile which stories have been read when using LJ mode. Or maybe not;
 maybe we'll just say that if you're in LJ mode all the stories have been read.
 If you're in LJ mode then it's really up to you to keep track, now isn't it.
+
+-----
+
+Version:
+
+	10	networking (incl. cookies, auth, 301)
+	20	reload feeds (incl. modified-since)
+	30	rss parsing (0.91/0.92, 1.0, 2.0)
+	40	'rss' display
+	50	remember read
+	60	'lj' display

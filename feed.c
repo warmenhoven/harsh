@@ -9,6 +9,49 @@
 
 list *feeds = NULL;
 
+static int
+feed_redir(struct feed *feed)
+{
+	char *hdrend, *databegin;
+
+	char *location;
+
+	hdrend = strstr(feed->tmpdata, "\r\n\r\n");
+	assert(hdrend);
+
+	hdrend += 2;
+	*hdrend = 0;
+	databegin = hdrend + 2;
+
+	location = strstr(feed->tmpdata, "\r\nLocation: ");
+	if (location) {
+		char *end = strchr(location + 2, '\r');
+		if (end) {
+			*end = 0;
+			if (feed->redir_url) {
+				/* too many redirects! (that's right: we only allow one) */
+				feed->status = FEED_ERR_HDR;
+				return (1);
+			}
+			feed->redir_url = strdup(location + strlen("\r\nLocation: "));
+			free(feed->tmpdata);
+			*end = '\r';
+			/*
+			 * success! (feed_fetch() might have failed, but if so, it'll do its
+			 * own cleanup)
+			 */
+			return (0);
+		}
+	}
+
+	/*
+	 * if we got here then there was a redirect with no Location header, which
+	 * means that we're sort of stuck.
+	 */
+	feed->status = FEED_ERR_HDR;
+	return (1);
+}
+
 static void
 feed_parse(struct feed *feed)
 {
@@ -53,35 +96,33 @@ feed_parse(struct feed *feed)
 	xml_free(xml_tree);
 }
 
-static void
+/*
+ * return non-0 if you want the feed to be closed. you don't want it to be
+ * closed if we were redirected.
+ */
+static int
 feed_check(struct feed *feed)
 {
 	char *hdrend;
 	int code;
 
-	if (feed->tmpdata == NULL || feed->tmpdatalen == 0) {
-		return;
-	}
-
 	hdrend = strstr(feed->tmpdata, "\r\n\r\n");
 	if (!hdrend) {
 		feed->status = FEED_ERR_HDR;
-		return;
+		return (0);
 	}
 
 	if (strncasecmp(feed->tmpdata, "HTTP/", 5) != 0) {
 		feed->status = FEED_ERR_HDR;
-		return;
+		return (0);
 	}
 
 	code = strtoul(feed->tmpdata + 9, NULL, 10);
 
 	if (code >= 500) {
 		feed->status = FEED_ERR_HDR;
-		return;
 	} else if (code >= 400) {
 		feed->status = FEED_ERR_HDR;
-		return;
 	} else if (code >= 300) {
 		if (code == 304) {
 			/*
@@ -90,7 +131,28 @@ feed_check(struct feed *feed)
 			 * status to FEED_ERR_NONE.
 			 */
 		} else {
-			/* XXX need to handle redirects, etc. */
+			int ret;
+
+			/*
+			 * we're being moved; this connection is done but we don't want to
+			 * do a full cleanup
+			 */
+			nbio_closefdt(&gnb, feed->fdt);
+			feed->fdt = NULL;
+
+			/* handle the redirect */
+			ret = feed_redir(feed);
+
+			/* we're done with the tmpdata now, we should free it */
+			feed->tmpdata = NULL;
+			feed->tmpdatalen = 0;
+			feed_fetch(feed);
+
+			/*
+			 * if feed_redir() is successful it will not want to be closed, so
+			 * we return the opposite of what it returns.
+			 */
+			return (!ret);
 		}
 	} else if (code >= 200) {
 		if (feed->data)
@@ -101,15 +163,25 @@ feed_check(struct feed *feed)
 		feed->tmpdatalen = 0;
 		feed_parse(feed);
 	} else {
+		/*
+		 * Since HTTP/1.0 did not define any 1xx status codes, servers MUST NOT
+		 * send a 1xx response to an HTTP/1.0 client except under experimental
+		 * conditions.
+		 */
 		feed->status = FEED_ERR_HDR;
-		return;
 	}
+
+	return (0);
 }
 
 static void
 feed_close(struct feed *feed)
 {
-	nbio_closefdt(&gnb, feed->fdt);
+	if (feed->redir_url)
+		free(feed->redir_url);
+	feed->redir_url = NULL;
+	if (feed->fdt)
+		nbio_closefdt(&gnb, feed->fdt);
 	feed->fdt = NULL;
 	update_feed_display(feed);
 }
@@ -132,8 +204,8 @@ feed_callback(void *nb, int event, nbio_fd_t *fdt)
 		if (len == 0) {
 			feed->tmpdata = realloc(feed->tmpdata, feed->tmpdatalen + 1);
 			feed->tmpdata[feed->tmpdatalen] = 0;
-			feed_check(feed);
-			feed_close(feed);
+			if (!feed_check(feed))
+				feed_close(feed);
 			return (0);
 		}
 
@@ -240,10 +312,16 @@ feed_connected(void *nb, int event, nbio_fd_t *fdt)
 		if (!(fdt = nbio_addfd(nb, NBIO_FDTYPE_STREAM, fdt->fd,
 							   0, feed_callback, feed, 0, 128))) {
 			feed->status = FEED_ERR_LIB;
+			feed_close(feed);
 			return (0);
 		}
 
 		feed->fdt = fdt;
+		/*
+		 * we really do want to call update_feed_display here, to give an
+		 * indication that we're connected. this will probably change when the
+		 * UI, uh, exists
+		 */
 		update_feed_display(feed);
 		nbio_setraw(nb, fdt, 2);
 
@@ -251,6 +329,7 @@ feed_connected(void *nb, int event, nbio_fd_t *fdt)
 	} else if (event == NBIO_EVENT_CONNECTFAILED) {
 		nbio_closefdt(nb, fdt);
 		feed->status = FEED_ERR_NET;
+		feed_close(feed);
 	}
 
 	return (0);
@@ -304,6 +383,9 @@ parse_url(struct feed *feed)
 {
 	char *url = feed->url;
 	char *path, *tmp;
+
+	if (feed->redir_url)
+		url = feed->redir_url;
 
 	if (strncasecmp(url, "feed:", 5) == 0) {
 		url += 5;
@@ -365,6 +447,10 @@ parse_url(struct feed *feed)
 	return (0);
 }
 
+/*
+ * remember, we could come here because of a redirect. in that case feed->fdt
+ * will be NULL
+ */
 void
 feed_fetch(struct feed *feed)
 {
@@ -383,8 +469,10 @@ feed_fetch(struct feed *feed)
 	feed->status = FEED_ERR_NONE;
 	feed->next_poll = time(NULL) + (feed->interval * 60 * 60);
 
-	if (parse_url(feed))
+	if (parse_url(feed)) {
+		feed_close(feed);
 		return;
+	}
 	if (find_cookies(feed)) {
 		/* if the cookies have changed, invalidate modified-since. */
 		if (feed->modified)
@@ -394,6 +482,7 @@ feed_fetch(struct feed *feed)
 
 	if (!(hp = gethostbyname(feed->host))) {
 		feed->status = FEED_ERR_DNS;
+		feed_close(feed);
 		return;
 	}
 
@@ -405,6 +494,7 @@ feed_fetch(struct feed *feed)
 	if (nbio_connect(&gnb, (struct sockaddr *)&sa, sizeof (sa),
 					 feed_connected, feed)) {
 		feed->status = FEED_ERR_NET;
+		feed_close(feed);
 	}
 }
 

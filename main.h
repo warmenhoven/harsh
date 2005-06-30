@@ -7,7 +7,7 @@
 #include "list.h"
 
 #define PROG "harsh"
-#define VERS "0.01"
+#define VERS "20"
 #define URL  "http://www.warmenhoven.org/src/"
 #define EMAIL "eric@warmenhoven.org"
 
@@ -28,6 +28,7 @@ enum feed_status {
 
 struct feed {
 	char *url;
+	char *redir_url;
 	char *cookies;
 	char *modified;
 
@@ -49,6 +50,9 @@ struct feed {
 	uint32_t interval;
 	time_t next_poll;
 
+	char *title;
+	char *link;
+	char *desc;
 	list *items;
 };
 

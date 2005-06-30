@@ -3,6 +3,7 @@
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "main.h"
 #include "xml.h"
 
@@ -380,6 +381,7 @@ feed_fetch(struct feed *feed)
 	}
 
 	feed->status = FEED_ERR_NONE;
+	feed->next_poll = time(NULL) + (feed->interval * 60 * 60);
 
 	if (parse_url(feed))
 		return;
@@ -407,11 +409,15 @@ feed_fetch(struct feed *feed)
 }
 
 struct feed *
-feed_add(char *url, uint32_t refresh)
+feed_add(char *url, uint32_t interval)
 {
 	struct feed *nf = calloc(1, sizeof (struct feed));
 	nf->url = strdup(url);
-	nf->refresh = refresh;
+	nf->interval = interval;
+
+	/* if no interval is specified, poll once a day */
+	if (!interval)
+		nf->interval = 24;
 
 	feeds = list_append(feeds, nf);
 
@@ -430,4 +436,48 @@ init_feeds()
 	}
 
 	return (0);
+}
+
+int
+feed_delay()
+{
+	list *l = feeds;
+	time_t soonest = 0;
+	struct feed *feed;
+	time_t tm;
+
+	if (!l)
+		return (-1);
+
+	feed = l->data;
+	l = l->next;
+
+	soonest = feed->next_poll;
+
+	while (l) {
+		feed = l->data;
+		l = l->next;
+		if (feed->next_poll < soonest)
+			soonest = feed->next_poll;
+	}
+
+	tm = time(NULL);
+	if (tm > soonest)
+		return (0);
+	return ((soonest - tm) * 1000);
+}
+
+void
+feed_poll()
+{
+	time_t tm = time(NULL);
+	list *l = feeds;
+
+	while (l) {
+		struct feed *feed = l->data;
+		l = l->next;
+
+		if (feed->next_poll < tm)
+			feed_fetch(feed);
+	}
 }

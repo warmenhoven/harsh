@@ -34,17 +34,17 @@ read_config()
 			return (0);
 		}
 		while (fgets(line, 8192, f)) {
-			uint32_t refresh;
+			uint32_t interval;
 			char *url;
 
 			struct feed *feed;
 
 			line[strlen(line)-1] = 0;
 
-			refresh = strtoul(line, NULL, 10);
+			interval = strtoul(line, NULL, 10);
 			url = strchr(line, ' ') + 1;
 
-			feed = feed_add(url, refresh);
+			feed = feed_add(url, interval);
 		}
 		fclose(f);
 	}
@@ -67,7 +67,7 @@ save_config()
 	while (l) {
 		struct feed *feed = l->data;
 		l = l->next;
-		fprintf(f, "%u %s\n", feed->refresh, feed->url);
+		fprintf(f, "%u %s\n", feed->interval, feed->url);
 	}
 
 	fclose(f);

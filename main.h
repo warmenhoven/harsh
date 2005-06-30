@@ -46,7 +46,8 @@ struct feed {
 	char *tmpdata;
 	int tmpdatalen;
 
-	uint32_t refresh;
+	uint32_t interval;
+	time_t next_poll;
 };
 
 extern list *feeds;
@@ -65,6 +66,9 @@ extern void end_window(void);
 extern int init_feeds(void);
 extern struct feed *feed_add(char *, uint32_t);
 extern void feed_fetch(struct feed *);
+
+extern int feed_delay();
+extern void feed_poll();
 
 extern void rss_parse(struct feed *, void *);
 

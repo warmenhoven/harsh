@@ -2,9 +2,3 @@ There should be two UI modes: "RSS" mode, and "LJ" mode, for lack of better
 names. RSS mode should list each feed individually, which ones have unread
 stories, et cetera. LJ mode should have all of the stories from all of the feeds
 flat and in time order.
-
------
-
-It needs to reload feeds on its own, at per-feed configurable intervals.
-
------

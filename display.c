@@ -125,7 +125,7 @@ static void
 process_entry()
 {
 	struct feed *feed;
-	static int refresh;
+	static int interval;
 
 	switch (entry) {
 	case NONE:
@@ -140,8 +140,8 @@ process_entry()
 		set_entry(TO);
 		break;
 	case TO:
-		refresh = strtoul(entry_text, NULL, 10);
-		feed = feed_add(add_url, refresh);
+		interval = strtoul(entry_text, NULL, 10);
+		feed = feed_add(add_url, interval);
 		save_config();
 		feed_fetch(feed);
 		set_entry(NONE);

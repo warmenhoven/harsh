@@ -26,8 +26,10 @@ main()
 		return (1);
 
 	while (1) {
-		if (nbio_poll(&gnb, -1) == -1)
+		int ms_delay = feed_delay();
+		if (nbio_poll(&gnb, ms_delay) == -1)
 			break;
+		feed_poll();
 	}
 
 	end_window();

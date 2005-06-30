@@ -6,73 +6,6 @@
 #include <unistd.h>
 #include "main.h"
 
-static char *
-fix_path(char *url)
-{
-	char *fix = strdup(url);
-	char *tmp = fix;
-
-	while (*tmp) {
-		if (*tmp == '/')
-			*tmp = '_';
-		tmp++;
-	}
-
-	return (fix);
-}
-
-static int
-read_feed(struct feed *feed)
-{
-	struct stat sb;
-	char path[1024], *fix;
-
-	fix = fix_path(feed->url);
-	sprintf(path, "%s/.%s/%s", getenv("HOME"), PROG, fix);
-	free(fix);
-
-	if (stat(path, &sb))
-		return (0);
-	else if (!S_ISREG(sb.st_mode)) {
-		unlink(path);
-		return (0);
-	} else {
-		FILE *f = fopen(path, "r");
-
-		if (!f) {
-			unlink(path);
-			return (0);
-		}
-
-		feed->tmpdatalen = sb.st_size;
-		feed->tmpdata = malloc(feed->tmpdatalen);
-
-		fread(feed->tmpdata, feed->tmpdatalen, 1, f);
-
-		fclose(f);
-	}
-
-	return (0);
-}
-
-int
-save_feed(struct feed *feed)
-{
-	FILE *f = NULL;
-	char path[256], *fix;
-
-	fix = fix_path(feed->url);
-	sprintf(path, "%s/.%s/%s", getenv("HOME"), PROG, fix);
-	free(fix);
-	if (!(f = fopen(path, "w"))) {
-		return (1);
-	}
-
-	fwrite(feed->data, feed->datalen, 1, f);
-
-	return (0);
-}
-
 int
 read_config()
 {
@@ -112,8 +45,6 @@ read_config()
 			url = strchr(line, ' ') + 1;
 
 			feed = feed_add(url, refresh);
-
-			read_feed(feed);
 		}
 		fclose(f);
 	}

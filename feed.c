@@ -1,7 +1,6 @@
 #include <assert.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "main.h"
@@ -48,11 +47,13 @@ feed_parse(struct feed *feed)
 		return;
 	}
 
+	rss_parse(feed, xml_tree);
+
 	xml_free(xml_tree);
 }
 
 static void
-feed_check(struct feed *feed, int startup)
+feed_check(struct feed *feed)
 {
 	char *hdrend;
 	int code;
@@ -91,8 +92,6 @@ feed_check(struct feed *feed, int startup)
 		feed->datalen = feed->tmpdatalen;
 		feed->tmpdata = NULL;
 		feed->tmpdatalen = 0;
-		if (!startup)
-			save_feed(feed);
 		feed_parse(feed);
 	} else {
 		feed->status = FEED_ERR_HDR;
@@ -126,7 +125,7 @@ feed_callback(void *nb, int event, nbio_fd_t *fdt)
 			feed_close(feed);
 			feed->tmpdata = realloc(feed->tmpdata, feed->tmpdatalen + 1);
 			feed->tmpdata[feed->tmpdatalen] = 0;
-			feed_check(feed, 0);
+			feed_check(feed);
 			return (0);
 		}
 
@@ -357,12 +356,7 @@ feed_fetch(struct feed *feed)
 	if (parse_url(feed))
 		return;
 	if (find_cookies(feed)) {
-		/*
-		 * if the cookies have changed, invalidate modified-since. on startup it
-		 * will always (possibly incorrectly) think that the cookies have
-		 * changed. so that means that on startup it always pulls all of the
-		 * feeds. i don't consider that a bug; that's the correct behavior.
-		 */
+		/* if the cookies have changed, invalidate modified-since. */
 		if (feed->modified)
 			free(feed->modified);
 		feed->modified = NULL;
@@ -404,7 +398,6 @@ init_feeds()
 	while (l) {
 		struct feed *feed = l->data;
 		l = l->next;
-		feed_check(feed, 1);
 		feed_fetch(feed);
 	}
 

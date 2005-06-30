@@ -3,7 +3,6 @@
 #endif
 
 #include <expat.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "list.h"
@@ -212,7 +211,7 @@ xml_end(void *data, const char *el)
 
 	if (!xml_parent(*node))
 		return;
-	if (!strcmp(xml_name(*node), el))
+	if (strcmp(xml_name(*node), el) == 0)
 		*node = xml_parent(*node);
 }
 

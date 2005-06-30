@@ -53,7 +53,6 @@ extern nbio_t gnb;
 
 extern int read_config(void);
 extern int save_config(void);
-extern int save_feed(struct feed *);
 
 extern int read_cookies(void);
 extern int find_cookies(struct feed *);
@@ -64,5 +63,7 @@ extern void end_window(void);
 extern int init_feeds(void);
 extern struct feed *feed_add(char *, uint32_t);
 extern void feed_fetch(struct feed *);
+
+extern void rss_parse(struct feed *, void *);
 
 #endif

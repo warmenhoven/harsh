@@ -7,7 +7,7 @@
 #include "list.h"
 
 #define PROG "harsh"
-#define VERS "20"
+#define VERS "23"
 #define URL  "http://www.warmenhoven.org/src/"
 #define EMAIL "eric@warmenhoven.org"
 
@@ -54,10 +54,13 @@ struct feed {
 	char *link;
 	char *desc;
 	list *items;
+
+	list *read_guids;
 };
 
 struct item {
 	char *guid;
+	int isPermaLink;
 	time_t date;
 	char *title;
 	char *link;

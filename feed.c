@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdlib.h>
@@ -17,7 +16,10 @@ feed_redir(struct feed *feed)
 	char *location;
 
 	hdrend = strstr(feed->tmpdata, "\r\n\r\n");
-	assert(hdrend);
+	if (!hdrend) {
+		feed->status = FEED_ERR_HDR;
+		return (1);
+	}
 
 	hdrend += 2;
 	*hdrend = 0;
@@ -62,7 +64,10 @@ feed_parse(struct feed *feed)
 	void *xml_tree;
 
 	hdrend = strstr(feed->data, "\r\n\r\n");
-	assert(hdrend);
+	if (!hdrend) {
+		feed->status = FEED_ERR_HDR;
+		return;
+	}
 
 	hdrend += 2;
 	*hdrend = 0;

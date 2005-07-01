@@ -34,6 +34,8 @@ if not conf.CheckLibWithHeader('expat', 'expat.h', 'c',
 	print 'expat not found'
 	Exit(1)
 
+#conf.CheckLib('efence')
+
 harsh = prog.Program(target = 'harsh', source = slist)
 
 conf.Finish()

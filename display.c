@@ -34,22 +34,15 @@ draw_menu()
 
 	while (l) {
 		struct feed *feed = l->data;
-		list *i = feed->items;
 		l = l->next;
 		move(line, 0);
 		clrtoeol();
-		mvaddstr(line, 4, feed->url);
+		mvaddstr(line, 4, feed->title ? feed->title : feed->url);
 		if (feed->fdt)
 			mvaddch(line, 1, '.');
 		if (feed->status != FEED_ERR_NONE)
 			mvaddch(line, 2, '!');
 		line++;
-		while (i) {
-			struct item *item = i->data;
-			i = i->next;
-			mvaddstr(line, 8, item->title);
-			line++;
-		}
 	}
 }
 

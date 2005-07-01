@@ -25,20 +25,19 @@ free_items(struct feed *feed)
 void
 rss_parse(struct feed *feed, void *xml_tree)
 {
-	const char *version;
 	list *children;
 	void *channel;
 	void *child;
+	int vers = 2;	/* also 0.9x */
 
 	/* by default we assume there's a problem with the feed. */
 	feed->status = FEED_ERR_RSS;
 
-	if (strcmp(xml_name(xml_tree), "rss") != 0)
+	if (strcmp(xml_name(xml_tree), "rdf:RDF") == 0) {
+		vers = 1;
+	} else if (strcmp(xml_name(xml_tree), "rss") != 0) {
 		return;
-
-	version = xml_get_attrib(xml_tree, "version");
-	if (strcmp(version, "2.0") != 0)
-		return;
+	}
 
 	channel = xml_get_child(xml_tree, "channel");
 	if (!channel)
@@ -67,7 +66,11 @@ rss_parse(struct feed *feed, void *xml_tree)
 
 	free_items(feed);
 
-	children = xml_get_children(channel);
+	if (vers == 2)
+		children = xml_get_children(channel);
+	else
+		children = xml_get_children(xml_tree);
+
 	while (children) {
 		struct item *item;
 		void *xml_item = children->data;

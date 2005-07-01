@@ -211,7 +211,7 @@ xml_end(void *data, const char *el)
 
 	if (!xml_parent(*node))
 		return;
-	if (strcmp(xml_name(*node), el) == 0)
+	else if (strcmp(xml_name(*node), el) == 0)
 		*node = xml_parent(*node);
 }
 

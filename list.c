@@ -6,6 +6,7 @@ list_new(void *data)
 {
 	list *l = malloc(sizeof (list));
 	l->next = NULL;
+	l->prev = NULL;
 	l->data = data;
 	return (l);
 }
@@ -36,6 +37,17 @@ list_nth(list *l, int n)
 }
 
 list *
+list_find(list *l, void *data)
+{
+	while (l) {
+		if (l->data == data)
+			return (l);
+		l = l->next;
+	}
+	return (NULL);
+}
+
+list *
 list_append(list *l, void *data)
 {
 	list *s = l;
@@ -45,6 +57,7 @@ list_append(list *l, void *data)
 
 	while (s->next) s = s->next;
 	s->next = list_new(data);
+	s->next->prev = s;
 
 	return (l);
 }
@@ -54,6 +67,8 @@ list_prepend(list *l, void *data)
 {
 	list *s = list_new(data);
 	s->next = l;
+	if (s->next)
+		s->next->prev = s;
 	return (s);
 }
 
@@ -66,6 +81,8 @@ list_remove(list *l, void *data)
 	if (s->data == data) {
 		p = s->next;
 		free(s);
+		if (p)
+			p->prev = NULL;
 		return (p);
 	}
 	while (s->next) {
@@ -73,6 +90,8 @@ list_remove(list *l, void *data)
 		s = s->next;
 		if (s->data == data) {
 			p->next = s->next;
+			if (p->next)
+				p->next->prev = p;
 			free(s);
 			return (l);
 		}

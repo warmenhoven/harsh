@@ -26,17 +26,22 @@ static char *prompt = NULL;
 
 static char *add_url;
 
+static struct feed *cur_feed;
+static struct item *cur_item;
+
 static void
 draw_menu()
 {
 	list *l = feeds;
-	int line = 0;
+	int line = 1;
 
 	while (l) {
 		struct feed *feed = l->data;
 		l = l->next;
 		move(line, 0);
 		clrtoeol();
+		if (feed == cur_feed)
+			mvaddch(line, 0, '>');
 		mvaddstr(line, 4, feed->title ? feed->title : feed->url);
 		if (feed->fdt)
 			mvaddch(line, 1, '.');
@@ -49,6 +54,22 @@ draw_menu()
 static void
 draw_feed()
 {
+	list *l = cur_feed->items;;
+	int line = 1;
+
+	mvaddstr(line, 2, cur_feed->desc);
+	line += 2;
+
+	while (l) {
+		struct item *item = l->data;
+		l = l->next;
+		move(line, 0);
+		clrtoeol();
+		if (item == cur_item)
+			mvaddch(line, 0, '>');
+		mvaddstr(line, 4, item->title ? item->title : item->desc);
+		line++;
+	}
 }
 
 static void
@@ -88,6 +109,7 @@ redraw_screen()
 void
 update_feed_display(struct feed *feed)
 {
+	/* XXX */
 	redraw_screen();
 	refresh();
 }
@@ -124,7 +146,6 @@ ui_add_feed()
 static void
 process_entry()
 {
-	struct feed *feed;
 	static int interval;
 
 	switch (entry) {
@@ -141,9 +162,9 @@ process_entry()
 		break;
 	case TO:
 		interval = strtoul(entry_text, NULL, 10);
-		feed = feed_add(add_url, interval);
+		cur_feed = feed_add(add_url, interval);
 		save_config();
-		feed_fetch(feed);
+		feed_fetch(cur_feed);
 		set_entry(NONE);
 		break;
 	}
@@ -203,6 +224,26 @@ entry_add(int c)
 	return (0);
 }
 
+static void
+next_feed()
+{
+	list *l = list_find(feeds, cur_feed);
+	if (!l || !l->next)
+		return;
+	cur_feed = l->next->data;
+	draw_menu();
+}
+
+static void
+prev_feed()
+{
+	list *l = list_find(feeds, cur_feed);
+	if (!l || !l->prev)
+		return;
+	cur_feed = l->prev->data;
+	draw_menu();
+}
+
 static int
 menu_input(int c)
 {
@@ -211,8 +252,20 @@ menu_input(int c)
 	}
 
 	switch (c) {
+	case 13:		/* ^M, enter */
+		mode = FEED;
+		cur_item = cur_feed->items ? cur_feed->items->data : NULL;
+		clear();
+		redraw_screen();
+		break;
 	case 'a':
 		ui_add_feed();
+		break;
+	case 'j':
+		next_feed();
+		break;
+	case 'k':
+		prev_feed();
 		break;
 	case 'q':
 		end_window();
@@ -224,11 +277,44 @@ menu_input(int c)
 	return (0);
 }
 
+static void
+next_item()
+{
+	list *l = list_find(cur_feed->items, cur_item);
+	if (!l || !l->next)
+		return;
+	cur_item = l->next->data;
+	draw_feed();
+}
+
+static void
+prev_item()
+{
+	list *l = list_find(cur_feed->items, cur_item);
+	if (!l || !l->prev)
+		return;
+	cur_item = l->prev->data;
+	draw_feed();
+}
+
 static int
 feed_input(int c)
 {
 	switch (c) {
+	case 'i':
+	case 'q':
+		mode = MENU;
+		clear();
+		redraw_screen();
+		break;
+	case 'j':
+		next_item();
+		break;
+	case 'k':
+		prev_item();
+		break;
 	}
+	refresh();
 	return (0);
 }
 
@@ -298,6 +384,11 @@ init_window()
 	nonl();
 	raw();
 	noecho();
+
+	if (feeds)
+		cur_feed = feeds->data;
+	else
+		cur_feed = NULL;
 
 	set_entry(NONE);
 	entry_text = calloc(1, 1);

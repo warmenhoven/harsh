@@ -18,6 +18,6 @@ Version:
 	10	networking (incl. cookies, auth, 301)
 	20	reload feeds (incl. modified-since)
 	30	rss parsing (0.91/0.92, 1.0, 2.0)
-	40	remember read
-	50	'rss' display
+	40	'rss' display
+	50	remember read
 	60	'lj' display

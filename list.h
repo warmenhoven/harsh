@@ -3,6 +3,7 @@
 
 typedef struct _list {
 	struct _list *next;
+	struct _list *prev;
 	void *data;
 } list;
 
@@ -11,6 +12,7 @@ typedef struct _list {
 extern list *list_new(void *);
 extern unsigned int list_length(list *);
 extern void *list_nth(list *, int);
+extern list *list_find(list *, void *);
 extern list *list_append(list *, void *);
 extern list *list_prepend(list *, void *);
 extern list *list_remove(list *, void *);

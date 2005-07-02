@@ -13,6 +13,7 @@ static int sp[2];
 static enum {
 	MENU,
 	FEED,
+	ITEM,
 } mode;
 
 static enum {
@@ -28,6 +29,17 @@ static char *add_url;
 
 static struct feed *cur_feed;
 static struct item *cur_item;
+
+static void
+mark_item_read(struct feed *feed, struct item *item)
+{
+	if (item->read)
+		return;
+	if (item->guid)
+		feed->read_guids = list_append(feed->read_guids, strdup(item->guid));
+	item->read = 1;
+	feed->unread--;
+}
 
 static void
 draw_menu()
@@ -47,6 +59,8 @@ draw_menu()
 			mvaddch(line, 1, '.');
 		if (feed->status != FEED_ERR_NONE)
 			mvaddch(line, 2, '!');
+		else if (feed->unread)
+			mvaddch(line, 2, 'N');
 		line++;
 	}
 }
@@ -67,9 +81,17 @@ draw_feed()
 		clrtoeol();
 		if (item == cur_item)
 			mvaddch(line, 0, '>');
+		if (!item->read)
+			mvaddch(line, 2, 'N');
 		mvaddstr(line, 4, item->title ? item->title : item->desc);
 		line++;
 	}
+}
+
+static void
+draw_item()
+{
+	mark_item_read(cur_feed, cur_item);
 }
 
 static void
@@ -102,6 +124,9 @@ redraw_screen()
 	case FEED:
 		draw_feed();
 		break;
+	case ITEM:
+		draw_item();
+		break;
 	}
 	draw_prompt();
 }
@@ -109,7 +134,8 @@ redraw_screen()
 void
 update_feed_display(struct feed *feed)
 {
-	/* XXX */
+	if (mode != MENU)
+		cur_item = feed->items ? feed->items->data : NULL;
 	redraw_screen();
 	refresh();
 }
@@ -258,6 +284,9 @@ menu_input(int c)
 		clear();
 		redraw_screen();
 		break;
+	case 18:		/* ^R */
+		feed_fetch(cur_feed);
+		break;
 	case 'a':
 		ui_add_feed();
 		break;
@@ -284,7 +313,12 @@ next_item()
 	if (!l || !l->next)
 		return;
 	cur_item = l->next->data;
-	draw_feed();
+	if (mode == FEED) {
+		draw_feed();
+	} else {
+		clear();
+		redraw_screen();
+	}
 }
 
 static void
@@ -294,16 +328,50 @@ prev_item()
 	if (!l || !l->prev)
 		return;
 	cur_item = l->prev->data;
-	draw_feed();
+	if (mode == FEED) {
+		draw_feed();
+	} else {
+		clear();
+		redraw_screen();
+	}
 }
 
 static int
 feed_input(int c)
 {
 	switch (c) {
+	case 13:		/* ^M, enter */
+		mode = ITEM;
+		clear();
+		redraw_screen();
+		break;
+	case 18:		/* ^R */
+		feed_fetch(cur_feed);
+		break;
 	case 'i':
 	case 'q':
 		mode = MENU;
+		clear();
+		redraw_screen();
+		break;
+	case 'j':
+		next_item();
+		break;
+	case 'k':
+		prev_item();
+		break;
+	}
+	refresh();
+	return (0);
+}
+
+static int
+item_input(int c)
+{
+	switch (c) {
+	case 'i':
+	case 'q':
+		mode = FEED;
 		clear();
 		redraw_screen();
 		break;
@@ -327,6 +395,8 @@ stdin_ready(void *nbv, int event, nbio_fd_t *fdt)
 		return (menu_input(c));
 	case FEED:
 		return (feed_input(c));
+	case ITEM:
+		return (item_input(c));
 	}
 	return (0);
 }

@@ -55,6 +55,33 @@ feed_redir(struct feed *feed)
 }
 
 static void
+mark_read(struct feed *feed)
+{
+	list *i = feed->items;
+
+	feed->unread = list_length(feed->items);
+
+	while (i) {
+		list *g = feed->read_guids;
+
+		struct item *item = i->data;
+		i = i->next;
+
+		if (!item->guid)
+			continue;
+
+		while (g) {
+			if (strcmp(item->guid, g->data) == 0) {
+				item->read = 1;
+				feed->unread--;
+				break;
+			}
+			g = g->next;
+		}
+	}
+}
+
+static void
 feed_parse(struct feed *feed)
 {
 	char *hdrend, *databegin;
@@ -97,6 +124,8 @@ feed_parse(struct feed *feed)
 	}
 
 	rss_parse(feed, xml_tree);
+
+	mark_read(feed);
 
 	xml_free(xml_tree);
 }

@@ -41,6 +41,9 @@ read_config()
 
 			line[strlen(line)-1] = 0;
 
+			if (line[0] == '#')
+				continue;
+
 			interval = strtoul(line, NULL, 10);
 			url = strchr(line, ' ') + 1;
 

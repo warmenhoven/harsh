@@ -56,6 +56,7 @@ struct feed {
 	list *items;
 
 	list *read_guids;
+	int unread;
 };
 
 struct item {
@@ -65,6 +66,7 @@ struct item {
 	char *title;
 	char *link;
 	char *desc;
+	int read;
 };
 
 extern list *feeds;

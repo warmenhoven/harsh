@@ -61,7 +61,6 @@ struct feed {
 
 struct item {
 	char *guid;
-	int isPermaLink;
 	time_t date;
 	char *title;
 	char *link;

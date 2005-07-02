@@ -58,11 +58,13 @@ static void
 mark_read(struct feed *feed)
 {
 	list *i = feed->items;
+	list *guids = feed->read_guids;
 
 	feed->unread = list_length(feed->items);
+	feed->read_guids = NULL;
 
 	while (i) {
-		list *g = feed->read_guids;
+		list *g = guids;
 
 		struct item *item = i->data;
 		i = i->next;
@@ -74,10 +76,18 @@ mark_read(struct feed *feed)
 			if (strcmp(item->guid, g->data) == 0) {
 				item->read = 1;
 				feed->unread--;
+				feed->read_guids = list_append(feed->read_guids,
+											   strdup(item->guid));
 				break;
 			}
 			g = g->next;
 		}
+	}
+
+
+	while (guids) {
+		free(guids->data);
+		guids = list_remove(guids, guids->data);
 	}
 }
 

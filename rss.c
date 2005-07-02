@@ -99,9 +99,6 @@ rss_parse(struct feed *feed, void *xml_tree)
 		child = xml_get_child(xml_item, "guid");
 		if (child && xml_get_data(child)) {
 			item->guid = strdup(xml_get_data(child));
-			char *perm = xml_get_attrib(child, "isPermaLink");
-			if (!perm || strcmp(perm, "true") == 0)
-				item->isPermaLink = 1;
 		}
 
 		if (!item->title && !item->desc) {

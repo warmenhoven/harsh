@@ -7,7 +7,7 @@
 #include "list.h"
 
 #define PROG "harsh"
-#define VERS "33"
+#define VERS "43"
 #define URL  "http://www.warmenhoven.org/src/"
 #define EMAIL "eric@warmenhoven.org"
 

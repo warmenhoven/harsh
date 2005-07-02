@@ -39,6 +39,7 @@ mark_item_read(struct feed *feed, struct item *item)
 		feed->read_guids = list_append(feed->read_guids, strdup(item->guid));
 	item->read = 1;
 	feed->unread--;
+	save_config();
 }
 
 static void

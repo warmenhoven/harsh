@@ -139,7 +139,7 @@ save_config()
 		return (1);
 	}
 
-	fprintf(f, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>");
+	fprintf(f, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n");
 
 	node = xml_new(PROG);
 	xml_attrib(node, "version", CFG_VER);

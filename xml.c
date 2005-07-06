@@ -246,6 +246,8 @@ xml_parse(const char *data, int len)
 
 	XML_Parse(parser, data, len, 0);
 
+	XML_ParserFree(parser);
+
 	return (ret);
 }
 
@@ -266,6 +268,9 @@ xml_print(FILE *f, void *n)
 
 	fprintf(f, ">");
 
+	if (!node->data)
+		fprintf(f, "\n");
+
 	l = node->children;
 	while (l) {
 		xml_print(f, l->data);
@@ -275,5 +280,5 @@ xml_print(FILE *f, void *n)
 	if (node->data)
 		fprintf(f, "%s", node->data);
 
-	fprintf(f, "</%s>", node->name);
+	fprintf(f, "</%s>\n", node->name);
 }

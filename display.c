@@ -2,6 +2,9 @@
 #include <ctype.h>
 #include <curses.h>
 #include <fcntl.h>
+#ifdef GOOGCORE
+#include <google/coredumper.h>
+#endif
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
@@ -140,8 +143,11 @@ redraw_screen()
 void
 update_feed_display(struct feed *feed)
 {
-	if (mode != MENU)
+	if (mode != MENU) {
+		if (cur_feed != feed)
+			return;
 		cur_item = feed->items ? feed->items->data : NULL;
+	}
 	redraw_screen();
 	refresh();
 }
@@ -354,6 +360,11 @@ feed_input(int c)
 	case 18:		/* ^R */
 		feed_fetch(cur_feed);
 		break;
+	case 'N':
+		mark_item_read(cur_feed, cur_item);
+		next_item();
+		redraw_screen();
+		break;
 	case 'i':
 	case 'q':
 		mode = MENU;
@@ -396,6 +407,12 @@ static int
 stdin_ready(void *nbv, int event, nbio_fd_t *fdt)
 {
 	int c = getch();
+#ifdef GOOGCORE
+	if (c == 0xA1) {	/* M-! */
+		WriteCoreDump("core.g");
+		return (0);
+	}
+#endif
 	switch (mode) {
 	case MENU:
 		return (menu_input(c));

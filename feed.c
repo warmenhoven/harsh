@@ -325,7 +325,7 @@ send_request(struct feed *feed)
 	}
 	strcat(req, "\r\n");
 
-	if (nbio_addtxvector(&gnb, feed->fdt, req, len) == -1) {
+	if (nbio_addtxvector(&gnb, feed->fdt, (u_char *)req, len) == -1) {
 		free(req);
 		feed->status = FEED_ERR_SND;
 		feed_close(feed);
@@ -611,7 +611,7 @@ feed_poll()
 		struct feed *feed = l->data;
 		l = l->next;
 
-		if (feed->next_poll < tm)
+		if (feed->next_poll <= tm)
 			feed_fetch(feed);
 	}
 }

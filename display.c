@@ -93,6 +93,11 @@ static void
 draw_item()
 {
 	mark_item_read(cur_feed, cur_item);
+	mvaddstr(1, 2, cur_feed->desc);
+	if (cur_item->title)
+		mvaddstr(3, 4, cur_item->title);
+	if (cur_item->desc)
+		mvaddstr(5, 6, cur_item->desc);
 }
 
 static void

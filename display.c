@@ -462,6 +462,7 @@ sigwinch_redraw(void *nbv, int event, nbio_fd_t *fdt)
 	read(sp[0], &c, 1);
 	endwin();
 	initscr();
+	curs_set(0);
 	clear();
 	redraw_screen();
 	refresh();

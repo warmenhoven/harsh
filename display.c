@@ -475,6 +475,7 @@ sigwinch(int sig)
 	write(sp[1], &c, 1);
 	endwin();
 	initscr();
+	curs_set(0);
 	clear();
 	redraw_screen();
 	refresh();

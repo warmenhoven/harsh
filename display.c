@@ -263,6 +263,34 @@ entry_add(int c)
 }
 
 static void
+next_unread_feed()
+{
+	list *l = list_find(feeds, cur_feed);
+	if (!l)
+		return;
+	while (l->next) {
+		struct feed *f;
+		l = l->next;
+		f = l->data;
+		if (f->unread) {
+			cur_feed = f;
+			draw_menu();
+			return;
+		}
+	}
+	l = feeds;
+	while (l->data != cur_feed) {
+		struct feed *f = l->data;
+		if (f->unread) {
+			cur_feed = f;
+			draw_menu();
+			return;
+		}
+		l = l->next;
+	}
+}
+
+static void
 next_feed()
 {
 	list *l = list_find(feeds, cur_feed);
@@ -290,6 +318,9 @@ menu_input(int c)
 	}
 
 	switch (c) {
+	case 9:			/* ^I, tab */
+		next_unread_feed();
+		break;
 	case 13:		/* ^M, enter */
 		mode = FEED;
 		cur_item = cur_feed->items ? cur_feed->items->data : NULL;
@@ -477,6 +508,7 @@ init_window()
 	nonl();
 	raw();
 	noecho();
+	curs_set(0);
 
 	if (feeds)
 		cur_feed = feeds->data;

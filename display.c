@@ -89,7 +89,7 @@ draw_menu()
 static void
 draw_feed()
 {
-	list *l = cur_feed->items;;
+	list *l = cur_feed->items;
 	int line = 1;
 
 	mvaddstr(line, 2, cur_feed->desc);

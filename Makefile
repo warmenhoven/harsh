@@ -2,10 +2,23 @@ TARGET = harsh
 LDLIBS = -lnbio -lcurses -lexpat
 CFLAGS = -g3 -O3 -Wall -Werror
 
-OBJS = config.o cookie.o display.o feed.o list.o main.o rss.o xml.o
+SRCS = $(wildcard *.c)
+HDRS = $(wildcard *.h)
+OBJS = $(patsubst %.c, %.o, $(SRCS))
 
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
 
-$(OBJS): list.h main.h xml.h
+$(OBJS): $(HDRS)
+
+# don't run this close to midnight
+dist:
+	rm -rf tmp
+	rm -f $(TARGET).tgz
+	mkdir -p tmp/$(TARGET)-`date +%Y%m%d`
+	cp Makefile SConstruct TODO $(SRCS) $(HDRS) tmp/$(TARGET)-`date +%Y%m%d`
+	cd tmp && tar zcf ../$(TARGET).tgz $(TARGET)-`date +%Y%m%d`
+	rm -rf tmp
+
+.PHONY: dist

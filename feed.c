@@ -575,6 +575,11 @@ init_feeds()
 int
 feed_delay()
 {
+	/*
+	 * oh sure, if i really wanted to, i could have another list of feeds sorted
+	 * by the next_poll time. but then i'd have to manage that list, and it
+	 * wouldn't really save a whole lot of time calculating this delay.
+	 */
 	list *l = feeds;
 	time_t soonest = 0;
 	struct feed *feed;
@@ -596,7 +601,7 @@ feed_delay()
 	}
 
 	tm = time(NULL);
-	if (tm > soonest)
+	if (tm >= soonest)
 		return (0);
 	return ((soonest - tm) * 1000);
 }

@@ -29,6 +29,12 @@ main()
 
 	while (1) {
 		int ms_delay = feed_delay();
+		/*
+		 * depending on what HZ is in the kernel, poll(2) may not be able to
+		 * handle a very large timeout. but 30 min should work on anybody's
+		 * system.
+		 */
+		ms_delay = ms_delay > 30 * 60 * 1000 ? ms_delay : 30 * 60 * 1000;
 		if (nbio_poll(&gnb, ms_delay) == -1)
 			break;
 		waitpid(-1, NULL, WNOHANG);

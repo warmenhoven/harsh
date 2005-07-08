@@ -34,6 +34,23 @@ static struct feed *cur_feed;
 static struct item *cur_item;
 
 static void
+open_url(char *url)
+{
+	pid_t pid;
+	char *args[4];
+
+	pid = fork();
+	if (pid != 0)
+		return;
+
+	args[0] = "screen";
+	args[1] = "links";
+	args[2] = url;
+	args[3] = NULL;
+	execvp(args[0], args);
+}
+
+static void
 mark_item_read(struct feed *feed, struct item *item)
 {
 	if (item->read)
@@ -339,6 +356,9 @@ menu_input(int c)
 	case 'k':
 		prev_feed();
 		break;
+	case 'o':
+		open_url(cur_feed->link);
+		break;
 	case 'q':
 		end_window();
 		exit(0);
@@ -408,6 +428,9 @@ feed_input(int c)
 	case 'k':
 		prev_item();
 		break;
+	case 'o':
+		open_url(cur_item->link);
+		break;
 	}
 	refresh();
 	return (0);
@@ -428,6 +451,9 @@ item_input(int c)
 		break;
 	case 'k':
 		prev_item();
+		break;
+	case 'o':
+		open_url(cur_item->link);
 		break;
 	}
 	refresh();

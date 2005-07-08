@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <time.h>
 #include "main.h"
 
@@ -29,6 +31,7 @@ main()
 		int ms_delay = feed_delay();
 		if (nbio_poll(&gnb, ms_delay) == -1)
 			break;
+		waitpid(-1, NULL, WNOHANG);
 		feed_poll();
 	}
 

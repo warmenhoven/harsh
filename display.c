@@ -370,6 +370,34 @@ menu_input(int c)
 }
 
 static void
+next_unread_item()
+{
+	list *l = list_find(cur_feed->items, cur_item);
+	if (!l)
+		return;
+	while (l->next) {
+		struct item *i;
+		l = l->next;
+		i = l->data;
+		if (!i->read) {
+			cur_item = i;
+			draw_feed();
+			return;
+		}
+	}
+	l = cur_feed->items;
+	while (l->data != cur_item) {
+		struct item *i = l->data;
+		if (!i->read) {
+			cur_item = i;
+			draw_feed();
+			return;
+		}
+		l = l->next;
+	}
+}
+
+static void
 next_item()
 {
 	list *l = list_find(cur_feed->items, cur_item);
@@ -403,6 +431,9 @@ static int
 feed_input(int c)
 {
 	switch (c) {
+	case 9:			/* ^I, tab */
+		next_unread_item();
+		break;
 	case 13:		/* ^M, enter */
 		mode = ITEM;
 		clear();

@@ -616,7 +616,10 @@ feed_poll()
 		struct feed *feed = l->data;
 		l = l->next;
 
-		if (feed->next_poll <= tm)
+		if (feed->next_poll <= tm) {
+			if (feed->fdt)
+				feed_close(feed);
 			feed_fetch(feed);
+		}
 	}
 }

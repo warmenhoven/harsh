@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "main.h"
+#include "md5.h"
 #include "xml.h"
 
 static void
@@ -20,6 +21,30 @@ free_items(struct feed *feed)
 {
 	while (feed->items)
 		free_item(feed, feed->items->data);
+}
+
+static char *
+item_hash(struct item *item)
+{
+	md5_byte_t digest[16];
+	md5_state_t state;
+	char *ret, *x;
+	int i;
+
+	md5_init(&state);
+	if (item->title)
+		md5_append(&state, (const md5_byte_t *)item->title, strlen(item->title));
+	if (item->link)
+		md5_append(&state, (const md5_byte_t *)item->link, strlen(item->link));
+	if (item->desc)
+		md5_append(&state, (const md5_byte_t *)item->desc, strlen(item->desc));
+	md5_finish(&state, digest);
+
+	x = ret = malloc(33);
+	for (i = 0; i < 16; i++, x += 2)
+		sprintf(x, "%02x", digest[i]);
+
+	return (ret);
 }
 
 void
@@ -99,6 +124,8 @@ rss_parse(struct feed *feed, void *xml_tree)
 		child = xml_get_child(xml_item, "guid");
 		if (child && xml_get_data(child)) {
 			item->guid = strdup(xml_get_data(child));
+		} else {
+			item->guid = item_hash(item);
 		}
 
 		if (!item->title && !item->desc) {

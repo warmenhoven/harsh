@@ -23,6 +23,7 @@ slist = [
 		 'feed.c',
 		 'list.c',
 		 'main.c',
+		 'md5.c',
 		 'rss.c',
 		 'xml.c'
 		]

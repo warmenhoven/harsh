@@ -1,6 +1,6 @@
 TARGET = harsh
-LDLIBS = -lnbio -lcurses -lexpat
-CFLAGS = -g3 -O3 -Wall -Werror
+LDLIBS = /usr/lib/libnbio.a -lcurses -lexpat /usr/local/lib/libcoredumper.a
+CFLAGS = -g3 -O3 -Wall -Werror -I/usr/include/libnbio
 
 SRCS = $(wildcard *.c)
 HDRS = $(wildcard *.h)
@@ -9,6 +9,7 @@ OBJS = $(patsubst %.c, %.o, $(SRCS))
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
+	$(CC) -o $@ $^ $(LDLIBS)
 
 $(OBJS): $(HDRS)
 

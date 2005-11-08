@@ -57,6 +57,7 @@ struct feed {
 
 	list *read_guids;
 	int unread;
+	int beep;
 };
 
 struct item {

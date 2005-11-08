@@ -67,6 +67,7 @@ draw_menu()
 {
 	list *l = feeds;
 	int line = 1;
+	int do_beep = 1;
 
 	while (l) {
 		struct feed *feed = l->data;
@@ -82,6 +83,12 @@ draw_menu()
 			mvaddch(line, 2, '!');
 		else if (feed->unread)
 			mvaddch(line, 2, 'N');
+		if (feed->beep) {
+			if (do_beep)
+				beep();
+			do_beep = 0;
+			feed->beep = 0;
+		}
 		line++;
 	}
 }

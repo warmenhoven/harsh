@@ -84,6 +84,8 @@ mark_read(struct feed *feed)
 		}
 	}
 
+	if (feed->unread)
+		feed->beep = 1;
 
 	while (guids) {
 		free(guids->data);

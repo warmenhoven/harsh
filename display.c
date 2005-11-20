@@ -44,7 +44,7 @@ open_url(char *url)
 		return;
 
 	args[0] = "screen";
-	args[1] = "links";
+	args[1] = "elinks";
 	args[2] = url;
 	args[3] = NULL;
 	execvp(args[0], args);

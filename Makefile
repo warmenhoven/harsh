@@ -1,6 +1,7 @@
+TOPDIR = /usr
 TARGET = harsh
-LDLIBS = /usr/lib/libnbio.a -lcurses -lexpat /usr/local/lib/libcoredumper.a
-CFLAGS = -g3 -O3 -Wall -Werror -I/usr/include/libnbio
+LDLIBS = $(TOPDIR)/lib/libnbio.a -lcurses -lexpat $(TOPDIR)/lib/libcoredumper.a
+CFLAGS = -g3 -O3 -Wall -Werror -I$(TOPDIR)/include/libnbio
 
 SRCS = $(wildcard *.c)
 HDRS = $(wildcard *.h)

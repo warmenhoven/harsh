@@ -16,7 +16,7 @@ main()
 	if (read_config())
 		return (1);
 
-	if (nbio_init(&gnb, 15)) {
+	if (nbio_init(&gnb, 100)) {
 		fprintf(stderr, "Couldn't init IO\n");
 		return (1);
 	}

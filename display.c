@@ -79,9 +79,41 @@ draw_menu()
 		mvaddstr(line, 4, feed->title ? feed->title : feed->url);
 		if (feed->fdt)
 			mvaddch(line, 1, '.');
-		if (feed->status != FEED_ERR_NONE)
+		if (feed->status != FEED_ERR_NONE) {
 			mvaddch(line, 2, '!');
-		else if (feed->unread)
+			move(line, 76);
+			switch (feed->status) {
+			case FEED_ERR_NONE:
+				break;
+			case FEED_ERR_URL:
+				addstr("URL");
+				break;
+			case FEED_ERR_DNS:
+				addstr("DNS");
+				break;
+			case FEED_ERR_NET:
+				addstr("NET");
+				break;
+			case FEED_ERR_LIB:
+				addstr("LIB");
+				break;
+			case FEED_ERR_SND:
+				addstr("SND");
+				break;
+			case FEED_ERR_RCV:
+				addstr("RCV");
+				break;
+			case FEED_ERR_HDR:
+				addstr("HDR");
+				break;
+			case FEED_ERR_XML:
+				addstr("XML");
+				break;
+			case FEED_ERR_RSS:
+				addstr("RSS");
+				break;
+			}
+		} else if (feed->unread)
 			mvaddch(line, 2, 'N');
 		if (feed->beep) {
 			if (do_beep)

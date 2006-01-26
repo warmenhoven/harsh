@@ -248,6 +248,9 @@ xml_parse(const char *data, int len)
 
 	XML_ParserFree(parser);
 
+	while (xml_parent(ret))
+		ret = xml_parent(ret);
+
 	return (ret);
 }
 
@@ -277,6 +280,7 @@ xml_print(FILE *f, void *n)
 		l = l->next;
 	}
 
+	/* XXX does not ensure data is cdata-safe! */
 	if (node->data)
 		fprintf(f, "%s", node->data);
 

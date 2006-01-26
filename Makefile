@@ -14,6 +14,9 @@ $(TARGET): $(OBJS)
 
 $(OBJS): $(HDRS)
 
+clean:
+	@rm -f $(OBJS) $(TARGET) core core.*
+
 # don't run this close to midnight
 dist:
 	rm -rf tmp

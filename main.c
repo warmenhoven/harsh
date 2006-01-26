@@ -10,9 +10,6 @@ nbio_t gnb;
 int
 main()
 {
-	if (read_cookies())
-		return (1);
-
 	if (read_config())
 		return (1);
 

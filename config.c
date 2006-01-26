@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -14,12 +15,16 @@ parse_config(void *xml_tree)
 	char *version;
 	list *f;
 
-	if (strcmp(xml_name(xml_tree), PROG) != 0)
+	if (strcmp(xml_name(xml_tree), PROG) != 0) {
+		fprintf(stderr, "incorrect name '%s', expect '%s'!\n", xml_name(xml_tree), PROG);
 		return (1);
+	}
 
 	version = xml_get_attrib(xml_tree, "version");
-	if (!version || strcmp(version, CFG_VER) != 0)
+	if (!version || strcmp(version, CFG_VER) != 0) {
+		fprintf(stderr, "unknown version!\n");
 		return (1);
+	}
 
 	f = xml_get_children(xml_tree);
 
@@ -104,23 +109,25 @@ read_config()
 
 		if (rc != sb.st_size) {
 			free(data);
-			unlink(path);
-			return (0);
+			fprintf(stderr, "bad read of config file\n");
+			return (1);
 		}
 
 		xml_tree = xml_parse(data, sb.st_size);
 		free(data);
 
 		if (!xml_tree) {
-			unlink(path);
-			return (0);
+			fprintf(stderr, "error parsing xml\n");
+			return (1);
 		}
 
 		rc = parse_config(xml_tree);
 		xml_free(xml_tree);
 
-		if (rc)
-			unlink(path);
+		if (rc) {
+			fprintf(stderr, "error parsing data\n");
+			return (1);
+		}
 	}
 
 	return (0);

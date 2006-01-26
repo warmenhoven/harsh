@@ -30,14 +30,15 @@ feed_redir(struct feed *feed)
 		char *end = strchr(location + 2, '\r');
 		if (end) {
 			*end = 0;
-			if (feed->redir_url) {
-				/* too many redirects! (that's right: we only allow one) */
+			if (feed->redir_count > 10) {
+				/* too many redirects! */
 				feed->status = FEED_ERR_HDR;
 				return (1);
 			}
+			feed->redir_count++;
 			feed->redir_url = strdup(location + strlen("\r\nLocation: "));
-			free(feed->tmpdata);
 			*end = '\r';
+			*hdrend = '\r';
 			/*
 			 * success! (feed_fetch() might have failed, but if so, it'll do its
 			 * own cleanup)
@@ -187,9 +188,11 @@ feed_check(struct feed *feed)
 			feed->fdt = NULL;
 
 			/* handle the redirect */
+			pull_cookies(feed);
 			ret = feed_redir(feed);
 
 			/* we're done with the tmpdata now, we should free it */
+			free(feed->tmpdata);
 			feed->tmpdata = NULL;
 			feed->tmpdatalen = 0;
 			feed_fetch(feed);
@@ -226,6 +229,7 @@ feed_close(struct feed *feed)
 	if (feed->redir_url)
 		free(feed->redir_url);
 	feed->redir_url = NULL;
+	feed->redir_count = 0;
 	if (feed->fdt)
 		nbio_closefdt(&gnb, feed->fdt);
 	feed->fdt = NULL;
@@ -250,6 +254,17 @@ feed_callback(void *nb, int event, nbio_fd_t *fdt)
 		if (len == 0) {
 			feed->tmpdata = realloc(feed->tmpdata, feed->tmpdatalen + 1);
 			feed->tmpdata[feed->tmpdatalen] = 0;
+#if 0
+			{
+				FILE *f;
+				char filename[256];
+				static int id = 0;
+				sprintf(filename, "%s/.%s/%d", getenv("HOME"), PROG, id++);
+				f = fopen(filename, "w");
+				fwrite(feed->tmpdata, feed->tmpdatalen, 1, f);
+				fclose(f);
+			}
+#endif
 			if (!feed_check(feed))
 				feed_close(feed);
 			return (0);
@@ -326,6 +341,18 @@ send_request(struct feed *feed)
 		strcat(req, "\r\n");
 	}
 	strcat(req, "\r\n");
+
+#if 0
+	{
+		FILE *f;
+		char filename[256];
+		static int id = 0;
+		sprintf(filename, "%s/.%s/%d", getenv("HOME"), PROG, id++);
+		f = fopen(filename, "w");
+		fprintf(f, "%s", req);
+		fclose(f);
+	}
+#endif
 
 	if (nbio_addtxvector(&gnb, feed->fdt, (u_char *)req, len) == -1) {
 		free(req);

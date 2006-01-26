@@ -33,6 +33,7 @@ struct feed {
 	char *modified;
 
 	enum feed_status status;
+	int redir_count;
 
 	char *user;
 	char *pass;
@@ -75,7 +76,7 @@ extern nbio_t gnb;
 extern int read_config(void);
 extern int save_config(void);
 
-extern int read_cookies(void);
+extern void pull_cookies(struct feed *);
 extern int find_cookies(struct feed *);
 
 extern int init_window(void);

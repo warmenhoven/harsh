@@ -499,7 +499,9 @@ feed_input(int c)
 		prev_item();
 		break;
 	case 'o':
+		mark_item_read(cur_feed, cur_item);
 		open_url(cur_item->link);
+		redraw_screen();
 		break;
 	}
 	refresh();

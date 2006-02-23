@@ -78,14 +78,6 @@ read_config()
 	struct stat sb;
 	char path[1024];
 
-	sprintf(path, "%s/.%s", getenv("HOME"), PROG);
-	if (stat(path, &sb))
-		mkdir(path, 0700);
-	else if (!S_ISDIR(sb.st_mode)) {
-		unlink(path);
-		mkdir(path, 0700);
-	}
-
 	sprintf(path, "%s/.%s/config", getenv("HOME"), PROG);
 	if (stat(path, &sb))
 		return (0);

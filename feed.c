@@ -30,13 +30,14 @@ feed_redir(struct feed *feed)
 		char *end = strchr(location + 2, '\r');
 		if (end) {
 			*end = 0;
-			if (feed->redir_count > 10) {
+			if (feed->redir_count >= MAX_REDIR) {
 				/* too many redirects! */
 				feed->status = FEED_ERR_HDR;
 				return (1);
 			}
 			feed->redir_count++;
 			feed->redir_url = strdup(location + strlen("\r\nLocation: "));
+			LOG("feed %s wants to redir to %s", feed->url, feed->redir_url);
 			*end = '\r';
 			*hdrend = '\r';
 			/*
@@ -195,7 +196,8 @@ feed_check(struct feed *feed)
 			free(feed->tmpdata);
 			feed->tmpdata = NULL;
 			feed->tmpdatalen = 0;
-			feed_fetch(feed);
+			if (!ret)
+				feed_fetch(feed);
 
 			/*
 			 * if feed_redir() is successful it will not want to be closed, so
@@ -539,6 +541,10 @@ feed_fetch(struct feed *feed)
 		return;
 	}
 
+	LOG("starting to fetch for %s (redir_count %d)",
+		feed->redir_url ? feed->redir_url : feed->url,
+		feed->redir_count);
+
 	feed->status = FEED_ERR_NONE;
 	feed->next_poll = time(NULL) + (feed->interval * 60 * 60);
 
@@ -552,6 +558,9 @@ feed_fetch(struct feed *feed)
 			free(feed->modified);
 		feed->modified = NULL;
 	}
+	if (feed->cookies)
+		LOG("cookies for %s:\n\n%s\n",
+			feed->redir_url ? feed->redir_url : feed->url, feed->cookies);
 
 	if (!(hp = gethostbyname(feed->host))) {
 		feed->status = FEED_ERR_DNS;

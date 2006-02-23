@@ -6,12 +6,18 @@
 #include <stdint.h>
 #include "list.h"
 
+#ifdef EST
+#define PROG "harshest"
+#else
 #define PROG "harsh"
+#endif
 #define VERS "43"
 #define URL  "http://www.warmenhoven.org/src/"
 #define EMAIL "eric@warmenhoven.org"
 
 #define USER_AGENT PROG "/" VERS " (" URL "; " EMAIL ")"
+
+#define MAX_REDIR	10
 
 enum feed_status {
 	FEED_ERR_NONE,
@@ -34,6 +40,8 @@ struct feed {
 
 	enum feed_status status;
 	int redir_count;
+
+	list *setcookies;
 
 	char *user;
 	char *pass;
@@ -63,7 +71,7 @@ struct feed {
 
 struct item {
 	char *guid;
-	time_t date;
+	time_t time;
 	char *title;
 	char *link;
 	char *desc;
@@ -72,6 +80,8 @@ struct item {
 
 extern list *feeds;
 extern nbio_t gnb;
+
+extern void __attribute__((__format__(__printf__, 1, 2))) LOG(char *, ...);
 
 extern int read_config(void);
 extern int save_config(void);

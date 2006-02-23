@@ -1,15 +1,63 @@
+#include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <time.h>
+#include <unistd.h>
 #include "main.h"
 
 nbio_t gnb;
 
+void
+LOG(char *fmt, ...)
+{
+#ifdef EST
+	va_list ap;
+	time_t t;
+	struct tm *tmp;
+	char tmstr[20];
+
+	static FILE *logfile = NULL;
+
+	if (!logfile) {
+		char path[1024];
+		sprintf(path, "%s/.%s/log", getenv("HOME"), PROG);
+		logfile = fopen(path, "w+");
+		if (!logfile) {
+			return;
+		}
+	}
+
+	t = time(NULL);
+	tmp = localtime(&t);
+	strftime(tmstr, sizeof (tmstr), "%m/%d %X", tmp);
+	fprintf(logfile, "%s ", tmstr);
+
+	va_start(ap, fmt);
+	vfprintf(logfile, fmt, ap);
+	va_end(ap);
+
+	fprintf(logfile, "\n");
+#endif
+}
+
 int
 main()
 {
+	char path[1024];
+	struct stat sb;
+
+	sprintf(path, "%s/.%s", getenv("HOME"), PROG);
+	if (stat(path, &sb))
+		mkdir(path, 0700);
+	else if (!S_ISDIR(sb.st_mode)) {
+		unlink(path);
+		mkdir(path, 0700);
+	}
+
 	if (read_config())
 		return (1);
 

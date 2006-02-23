@@ -72,6 +72,8 @@ read_cookies()
 		flag = strchr(host, '\t');
 		if (!flag)
 			continue;
+		if (*host == '.')
+			host++;
 		*flag++ = 0;
 
 		path = strchr(flag, '\t');
@@ -118,10 +120,46 @@ read_cookies()
 	fclose(f);
 }
 
+static void
+pull_cookie(struct feed *feed, char *string)
+{
+	char *name, *value, *end;
+	struct cookie *cookie;
+
+	name = string + strlen("Set-Cookie: ");
+
+	value = strchr(name, '=');
+	if (!value)
+		return;
+	*value++ = 0;
+
+	end = strchr(value, ';');
+	if (end)
+		*end = '\0';
+
+	/* yes i should parse host and path, no i don't care that i don't */
+
+	if (strlen(value) != 0) {
+		LOG("feed %s adding cookie %s as %s",
+			feed->redir_url ? feed->redir_url : feed->url, name, value);
+
+		cookie = malloc(sizeof (struct cookie));
+		cookie->host = NULL;
+		cookie->path = NULL;
+		cookie->name = strdup(name);
+		cookie->value = strdup(value);
+		cookie->flag = 0;
+		feed->setcookies = list_append(feed->setcookies, cookie);
+	}
+
+	*(--value) = '=';
+	if (end)
+		*end = ';';
+}
+
 void
 pull_cookies(struct feed *feed)
 {
-#if 0
 	char *hdrend, *databegin;
 
 	char *cookie = NULL;
@@ -136,36 +174,26 @@ pull_cookies(struct feed *feed)
 	*hdrend = 0;
 	databegin = hdrend + 2;
 
+	cookie = feed->tmpdata;
 	do {
-		cookie = strstr(feed->tmpdata, "\r\nSet-Cookie: ");
+		cookie = strstr(cookie, "\r\nSet-Cookie: ");
 		if (cookie) {
 			char *end = strchr(cookie + 2, '\r');
 			if (end) {
 				*end = 0;
-				feed->redir_url = strdup(location + strlen("\r\nLocation: "));
+				pull_cookie(feed, cookie + 2);
 				*end = '\r';
 			}
+			cookie = end;
 		}
 	} while (cookie);
 
 	*hdrend = '\r';
-#endif
 }
 
-/* return 1 if cookies have changed, 0 otherwise */
-int
-find_cookies(struct feed *feed)
+static void
+walk_cookies(struct feed *feed, list *l, int check_skip)
 {
-	list *l;
-	char *orig = feed->cookies;
-	int ret = 0;
-
-	read_cookies();
-
-	feed->cookies = calloc(1, 1);
-
-	l = cookies;
-
 	while (l) {
 		struct cookie *cookie = l->data;
 		l = l->next;
@@ -182,19 +210,53 @@ find_cookies(struct feed *feed)
 
 			if (strcasecmp(cookie->host, &feed->host[f - c]) != 0)
 				continue;
-		} else {
+		} else if (cookie->host) {
 			if (strcasecmp(cookie->host, feed->host) != 0)
 				continue;
 		}
 
-		if (strncasecmp(cookie->path, feed->path, strlen(cookie->path)) != 0)
-			continue;
+		if (cookie->path) {
+			if (strncasecmp(cookie->path, feed->path, strlen(cookie->path)) != 0)
+				continue;
+		}
+
+		if (check_skip) {
+			/* go through all of the setcookies, see if this cookie has been
+			 * overwritten */
+			list *s = feed->setcookies;
+			while (s) {
+				struct cookie *sc = s->data;
+				if (strcasecmp(cookie->name, sc->name) == 0)
+					break;
+				s = s->next;
+			}
+			if (s)
+				continue;
+		}
 
 		sprintf(buf, "%s=%s; ", cookie->name, cookie->value);
 		feed->cookies = realloc(feed->cookies,
 								strlen(feed->cookies) + strlen(buf) + 1);
 		strcat(feed->cookies, buf);
 	}
+}
+
+/* return 1 if cookies have changed, 0 otherwise */
+int
+find_cookies(struct feed *feed)
+{
+	list *l;
+	char *orig = feed->cookies;
+	int ret = 0;
+
+	read_cookies();
+
+	feed->cookies = calloc(1, 1);
+
+	l = feed->setcookies;
+
+	walk_cookies(feed, feed->setcookies, 0);
+	walk_cookies(feed, cookies, 1);
 
 	if (feed->cookies[0])
 		feed->cookies[strlen(feed->cookies) - 2] = 0;

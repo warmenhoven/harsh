@@ -254,6 +254,57 @@ xml_parse(const char *data, int len)
 	return (ret);
 }
 
+static char *
+xml_enc(const char *str)
+{
+	const char *x = str;
+	char *ret = NULL, *y;
+	int len = strlen(str);
+
+	if (ret)
+		free(ret);
+
+	y = ret = malloc(len * 6);
+
+	while (*x) {
+		switch (*x) {
+		case '"':
+			*y++ = '&';
+			*y++ = 'q';
+			*y++ = 'u';
+			*y++ = 'o';
+			*y++ = 't';
+			*y++ = ';';
+			break;
+		case '<':
+			*y++ = '&';
+			*y++ = 'l';
+			*y++ = 't';
+			*y++ = ';';
+			break;
+		case '>':
+			*y++ = '&';
+			*y++ = 'g';
+			*y++ = 't';
+			*y++ = ';';
+			break;
+		case '&':
+			*y++ = '&';
+			*y++ = 'a';
+			*y++ = 'm';
+			*y++ = 'p';
+			*y++ = ';';
+			break;
+		default:
+			*y++ = *x;
+		}
+		x++;
+	}
+	*y = 0;
+
+	return (ret);
+}
+
 void
 xml_print(FILE *f, void *n)
 {
@@ -266,7 +317,7 @@ xml_print(FILE *f, void *n)
 	while (l) {
 		xmlnode *attrib = l->data;
 		l = l->next;
-		fprintf(f, " %s=\"%s\"", attrib->name, attrib->data);
+		fprintf(f, " %s=\"%s\"", attrib->name, xml_enc(attrib->data));
 	}
 
 	fprintf(f, ">");
@@ -282,7 +333,7 @@ xml_print(FILE *f, void *n)
 
 	/* XXX does not ensure data is cdata-safe! */
 	if (node->data)
-		fprintf(f, "%s", node->data);
+		fprintf(f, "%s", xml_enc(node->data));
 
 	fprintf(f, "</%s>\n", node->name);
 }

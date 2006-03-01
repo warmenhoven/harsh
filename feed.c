@@ -558,9 +558,6 @@ feed_fetch(struct feed *feed)
 			free(feed->modified);
 		feed->modified = NULL;
 	}
-	if (feed->cookies)
-		LOG("cookies for %s:\n\n%s\n",
-			feed->redir_url ? feed->redir_url : feed->url, feed->cookies);
 
 	if (!(hp = gethostbyname(feed->host))) {
 		feed->status = FEED_ERR_DNS;

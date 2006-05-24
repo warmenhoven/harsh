@@ -8,6 +8,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include "main.h"
 
@@ -23,6 +24,7 @@ static enum {
 	NONE,
 	ADD,
 	TO,
+	DEL,
 } entry;
 
 static char *entry_text = NULL;
@@ -32,23 +34,6 @@ static char *add_url;
 
 static struct feed *cur_feed;
 static struct item *cur_item;
-
-static void
-open_url(char *url)
-{
-	pid_t pid;
-	char *args[4];
-
-	pid = fork();
-	if (pid != 0)
-		return;
-
-	args[0] = "screen";
-	args[1] = "elinks";
-	args[2] = url;
-	args[3] = NULL;
-	execvp(args[0], args);
-}
 
 static void
 mark_item_read(struct feed *feed, struct item *item)
@@ -143,7 +128,13 @@ draw_feed()
 			mvaddch(line, 0, '>');
 		if (!item->read)
 			mvaddch(line, 2, 'N');
-		mvaddstr(line, 4, item->title ? item->title : item->desc);
+		move(line, 4);
+		addstr(item->title ? item->title : item->desc);
+		if (item->creator) {
+			addstr(" (");
+			addstr(item->creator);
+			addch(')');
+		}
 		line++;
 	}
 }
@@ -153,8 +144,14 @@ draw_item()
 {
 	mark_item_read(cur_feed, cur_item);
 	mvaddstr(1, 2, cur_feed->desc);
+	move(3, 4);
 	if (cur_item->title)
-		mvaddstr(3, 4, cur_item->title);
+		addstr(cur_item->title);
+	if (cur_item->creator) {
+		addstr(" (");
+		addstr(cur_item->creator);
+		addch(')');
+	}
 	if (cur_item->desc)
 		mvaddstr(5, 6, cur_item->desc);
 }
@@ -194,6 +191,34 @@ redraw_screen()
 		break;
 	}
 	draw_prompt();
+}
+
+static void
+open_url(char *url)
+{
+	pid_t pid;
+	char *args[4];
+	char *openurl;
+
+	pid = fork();
+	if (pid > 0) {
+		waitpid(pid, NULL, 0);
+		clear();
+		redraw_screen();
+	}
+	if (pid != 0)
+		return;
+
+	openurl = malloc(strlen(url) + strlen("openURL(, new-tab)") + 1);
+	sprintf(openurl, "openURL(%s, new-tab)", url);
+
+	args[0] = "elinks";
+	args[1] = "-remote";
+	args[2] = openurl;
+	args[3] = NULL;
+	execvp(args[0], args);
+
+	exit(1);
 }
 
 void
@@ -238,6 +263,16 @@ ui_add_feed()
 }
 
 static void
+ui_delete_feed()
+{
+	if (!cur_feed)
+		return;
+	set_prompt("Really delete feed? ([yes]/no):");
+	set_entry(DEL);
+	draw_prompt();
+}
+
+static void
 process_entry()
 {
 	static int interval;
@@ -260,6 +295,12 @@ process_entry()
 		save_config();
 		feed_fetch(cur_feed);
 		set_entry(NONE);
+		break;
+	case DEL:
+		cur_feed = feed_del(cur_feed);
+		save_config();
+		set_entry(NONE);
+		clear();
 		break;
 	}
 }
@@ -304,6 +345,25 @@ entry_add(int c)
 		entry_text[c] = 0;
 		draw_prompt();
 		break;
+	case 'n':
+		if (entry == DEL) {
+			set_entry(NONE);
+			draw_prompt();
+			*entry_text = 0;
+			break;
+		}
+		/* fallthrough */
+	case 'y':
+		if (entry == DEL) {
+			cur_feed = feed_del(cur_feed);
+			save_config();
+			set_entry(NONE);
+			clear();
+			redraw_screen();
+			*entry_text = 0;
+			break;
+		}
+		/* fallthrough */
 	default:
 		if (isprint(c)) {
 			entry_text = realloc(entry_text, l + 2);
@@ -386,13 +446,18 @@ menu_input(int c)
 	case 18:		/* ^R */
 		feed_fetch(cur_feed);
 		break;
+	case 'D':
+		ui_delete_feed(cur_feed);
+		break;
 	case 'a':
 		ui_add_feed();
 		break;
 	case 'j':
+	case KEY_DOWN:
 		next_feed();
 		break;
 	case 'k':
+	case KEY_UP:
 		prev_feed();
 		break;
 	case 'o':
@@ -493,15 +558,16 @@ feed_input(int c)
 		redraw_screen();
 		break;
 	case 'j':
+	case KEY_DOWN:
 		next_item();
 		break;
 	case 'k':
+	case KEY_UP:
 		prev_item();
 		break;
 	case 'o':
 		mark_item_read(cur_feed, cur_item);
 		open_url(cur_item->link);
-		redraw_screen();
 		break;
 	}
 	refresh();
@@ -525,9 +591,11 @@ item_input(int c)
 		redraw_screen();
 		break;
 	case 'j':
+	case KEY_DOWN:
 		next_item();
 		break;
 	case 'k':
+	case KEY_UP:
 		prev_item();
 		break;
 	case 'o':

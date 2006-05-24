@@ -75,6 +75,7 @@ struct item {
 	char *title;
 	char *link;
 	char *desc;
+	char *creator;
 	int read;
 };
 
@@ -95,6 +96,7 @@ extern void end_window(void);
 
 extern int init_feeds(void);
 extern struct feed *feed_add(char *, uint32_t);
+extern struct feed *feed_del(struct feed *);
 extern void feed_fetch(struct feed *);
 
 extern int feed_delay();

@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdlib.h>
@@ -7,6 +8,10 @@
 #include "xml.h"
 
 list *feeds = NULL;
+
+#ifdef EST
+static int id = 0;
+#endif
 
 static int
 feed_redir(struct feed *feed)
@@ -256,11 +261,10 @@ feed_callback(void *nb, int event, nbio_fd_t *fdt)
 		if (len == 0) {
 			feed->tmpdata = realloc(feed->tmpdata, feed->tmpdatalen + 1);
 			feed->tmpdata[feed->tmpdatalen] = 0;
-#if 0
+#ifdef EST
 			{
 				FILE *f;
 				char filename[256];
-				static int id = 0;
 				sprintf(filename, "%s/.%s/%d", getenv("HOME"), PROG, id++);
 				f = fopen(filename, "w");
 				fwrite(feed->tmpdata, feed->tmpdatalen, 1, f);
@@ -344,11 +348,10 @@ send_request(struct feed *feed)
 	}
 	strcat(req, "\r\n");
 
-#if 0
+#ifdef EST
 	{
 		FILE *f;
 		char filename[256];
-		static int id = 0;
 		sprintf(filename, "%s/.%s/%d", getenv("HOME"), PROG, id++);
 		f = fopen(filename, "w");
 		fprintf(f, "%s", req);
@@ -591,6 +594,26 @@ feed_add(char *url, uint32_t interval)
 	feeds = list_append(feeds, nf);
 
 	return (nf);
+}
+
+struct feed *
+feed_del(struct feed *feed)
+{
+	list *l = list_find(feeds, feed);
+	struct feed *ret;
+
+	assert(l);
+
+	if (l->next)
+		ret = l->next->data;
+	else if (l->prev)
+		ret = l->prev->data;
+	else
+		ret = NULL;
+
+	feeds = list_remove(feeds, feed);
+
+	return (ret);
 }
 
 int

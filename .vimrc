@@ -1,4 +1,4 @@
-set makeprg=scons
+"set makeprg=scons
 set sw=4
 set ts=4
 set noet

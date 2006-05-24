@@ -13,6 +13,7 @@ free_item(struct feed *feed, struct item *item)
 	free(item->title);
 	free(item->link);
 	free(item->desc);
+	free(item->creator);
 	free(item);
 }
 
@@ -111,14 +112,19 @@ rss_parse(struct feed *feed, void *xml_tree)
 			item->title = strdup(xml_get_data(child));
 		}
 
-		child = xml_get_child(xml_item, "link");
-		if (child && xml_get_data(child)) {
-			item->link = strdup(xml_get_data(child));
-		}
-
 		child = xml_get_child(xml_item, "description");
 		if (child && xml_get_data(child)) {
 			item->desc = strdup(xml_get_data(child));
+		}
+
+		if (!item->title && !item->desc) {
+			free_item(NULL, item);
+			continue;
+		}
+
+		child = xml_get_child(xml_item, "link");
+		if (child && xml_get_data(child)) {
+			item->link = strdup(xml_get_data(child));
 		}
 
 		child = xml_get_child(xml_item, "guid");
@@ -128,9 +134,9 @@ rss_parse(struct feed *feed, void *xml_tree)
 			item->guid = item_hash(item);
 		}
 
-		if (!item->title && !item->desc) {
-			free_item(NULL, item);
-			continue;
+		child = xml_get_child(xml_item, "dc:creator");
+		if (child && xml_get_data(child)) {
+			item->creator = strdup(xml_get_data(child));
 		}
 
 		feed->items = list_append(feed->items, item);

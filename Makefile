@@ -7,6 +7,10 @@ SRCS = $(wildcard *.c)
 HDRS = $(wildcard *.h)
 OBJS = $(patsubst %.c, %.o, $(SRCS))
 
+ifneq "$(EST)" ""
+CFLAGS += -DEST
+endif
+
 all: $(TARGET)
 
 $(TARGET): $(OBJS)

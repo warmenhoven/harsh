@@ -426,6 +426,24 @@ prev_feed()
 	draw_menu();
 }
 
+static void
+first_feed()
+{
+	if (!feeds)
+		return;
+	cur_feed = feeds->data;
+	draw_menu();
+}
+
+static void
+last_feed()
+{
+	if (!feeds)
+		return;
+	cur_feed = list_nth(feeds, list_length(feeds) - 1);
+	draw_menu();
+}
+
 static int
 menu_input(int c)
 {
@@ -466,6 +484,12 @@ menu_input(int c)
 	case 'q':
 		end_window();
 		exit(0);
+	case '=':
+		first_feed();
+		break;
+	case '*':
+		last_feed();
+		break;
 	default:
 		return (0);
 	}
@@ -530,6 +554,24 @@ prev_item()
 	}
 }
 
+static void
+first_item()
+{
+	if (!cur_feed->items)
+		return;
+	cur_item = cur_feed->items->data;
+	draw_feed();
+}
+
+static void
+last_item()
+{
+	if (!cur_feed->items)
+		return;
+	cur_item = list_nth(cur_feed->items, list_length(cur_feed->items) - 1);
+	draw_feed();
+}
+
 static int
 feed_input(int c)
 {
@@ -568,6 +610,12 @@ feed_input(int c)
 	case 'o':
 		mark_item_read(cur_feed, cur_item);
 		open_url(cur_item->link);
+		break;
+	case '=':
+		first_item();
+		break;
+	case '*':
+		last_item();
 		break;
 	}
 	refresh();

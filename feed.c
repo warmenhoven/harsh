@@ -265,7 +265,7 @@ feed_callback(void *nb, int event, nbio_fd_t *fdt)
 			{
 				FILE *f;
 				char filename[256];
-				sprintf(filename, "%s/.%s/%d", getenv("HOME"), PROG, id++);
+				sprintf(filename, "%s/%d", mydir(), id++);
 				f = fopen(filename, "w");
 				fwrite(feed->tmpdata, feed->tmpdatalen, 1, f);
 				fclose(f);
@@ -352,7 +352,7 @@ send_request(struct feed *feed)
 	{
 		FILE *f;
 		char filename[256];
-		sprintf(filename, "%s/.%s/%d", getenv("HOME"), PROG, id++);
+		sprintf(filename, "%s/%d", mydir(), id++);
 		f = fopen(filename, "w");
 		fprintf(f, "%s", req);
 		fclose(f);

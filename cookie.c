@@ -39,7 +39,7 @@ read_cookies()
 	char path[1024];
 	FILE *f;
 
-	sprintf(path, "%s/.%s/cookies", getenv("HOME"), PROG);
+	sprintf(path, "%s/cookies", mydir());
 
 	if (stat(path, &buf)) {
 		return;

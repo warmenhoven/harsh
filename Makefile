@@ -1,6 +1,6 @@
 TOPDIR = /usr
 TARGET = harsh
-LDLIBS = $(TOPDIR)/lib/libnbio.a -lcurses -lexpat $(TOPDIR)/lib/libcoredumper.a
+LDLIBS = $(TOPDIR)/lib/libnbio.a -lcurses -lexpat
 CFLAGS = -g3 -O3 -Wall -Werror -I$(TOPDIR)/include/libnbio
 
 SRCS = $(wildcard *.c)
@@ -9,6 +9,11 @@ OBJS = $(patsubst %.c, %.o, $(SRCS))
 
 ifneq "$(EST)" ""
 CFLAGS += -DEST
+endif
+
+ifneq "$(CORE)" ""
+CFLAGS += -DGOOGCORE
+LDLIBS += $(TOPDIR)/lib/libcoredumper.a
 endif
 
 all: $(TARGET)

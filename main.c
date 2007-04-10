@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,7 +25,7 @@ LOG(char *fmt, ...)
 
 	if (!logfile) {
 		char path[1024];
-		sprintf(path, "%s/.%s/log", getenv("HOME"), PROG);
+		sprintf(path, "%s/log", mydir());
 		logfile = fopen(path, "w+");
 		if (!logfile) {
 			return;
@@ -42,6 +43,41 @@ LOG(char *fmt, ...)
 
 	fprintf(logfile, "\n");
 #endif
+}
+
+char *
+mydir()
+{
+	struct stat sb;
+	static int init = 0;
+	static char path[1024];
+	char env[1024];
+	int i;
+
+	if (init)
+		return path;
+
+	sprintf(env, "%sDIR", PROG);
+	for (i = 0; i < strlen(PROG); i++)
+		env[i] = toupper(env[i]);
+
+	if (getenv(env)) {
+		sprintf(path, "%s", getenv(env));
+	} else {
+		sprintf(path, "%s/.%s", getenv("HOME"), PROG);
+	}
+
+	/* make sure the directory exists and is a directory */
+	if (stat(path, &sb))
+		mkdir(path, 0700);
+	else if (!S_ISDIR(sb.st_mode)) {
+		unlink(path);
+		mkdir(path, 0700);
+	}
+
+	init = 1;
+
+	return path;
 }
 
 int

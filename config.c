@@ -78,7 +78,7 @@ read_config()
 	struct stat sb;
 	char path[1024];
 
-	sprintf(path, "%s/.%s/config", getenv("HOME"), PROG);
+	sprintf(path, "%s/config", mydir());
 	if (stat(path, &sb))
 		return (0);
 	else if (!S_ISREG(sb.st_mode)) {
@@ -133,7 +133,7 @@ save_config()
 	char path[256];
 	void *node;
 
-	sprintf(path, "%s/.%s/config", getenv("HOME"), PROG);
+	sprintf(path, "%s/config", mydir());
 	if (!(f = fopen(path, "w"))) {
 		return (1);
 	}

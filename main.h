@@ -84,6 +84,8 @@ extern nbio_t gnb;
 
 extern void __attribute__((__format__(__printf__, 1, 2))) LOG(char *, ...);
 
+extern char *mydir(void);
+
 extern int read_config(void);
 extern int save_config(void);
 

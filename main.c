@@ -83,17 +83,6 @@ mydir()
 int
 main()
 {
-	char path[1024];
-	struct stat sb;
-
-	sprintf(path, "%s/.%s", getenv("HOME"), PROG);
-	if (stat(path, &sb))
-		mkdir(path, 0700);
-	else if (!S_ISDIR(sb.st_mode)) {
-		unlink(path);
-		mkdir(path, 0700);
-	}
-
 	if (read_config())
 		return (1);
 
